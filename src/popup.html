@@ -4,163 +4,317 @@
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 360px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 14px;
-      color: #333;
-      padding: 16px;
+
+    .btn-eolma {
+      background: #5856D6;
+      color: #fff;
     }
-    h1 {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #1ec800;
+    .btn-eolma:hover { background: #4a48c4; }
+    .btn-eolma:active { background: #3d3bb0; }
+    .btn-eolma:disabled {
+      background: #AEAEB2;
+      cursor: not-allowed;
     }
-    .info {
-      background: #f5f5f5;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
+
+    .eolma-auth {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .eolma-auth-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-off { background: #AEAEB2; }
+    .dot-on  { background: #34C759; }
+    .eolma-auth-label {
       font-size: 13px;
-      color: #666;
+      color: #86868B;
     }
-    .info.error {
-      background: #fff0f0;
-      color: #d32f2f;
-    }
-    .section {
-      margin-bottom: 12px;
-    }
-    label {
-      display: block;
+    .eolma-auth-user {
       font-size: 12px;
       font-weight: 600;
-      color: #666;
-      margin-bottom: 4px;
+      color: #1D1D1F;
     }
-    select, input {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+
+    body {
+      width: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      color: #1D1D1F;
+      background: #F5F5F7;
+      padding: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: #007AFF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .header-text { flex: 1; }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1D1D1F;
+      line-height: 1.2;
+    }
+    .header-subtitle {
+      font-size: 11px;
+      color: #86868B;
+      margin-top: 1px;
+    }
+    .platform-badge {
+      display: none;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .platform-badge.naverpay {
+      background: #E8FDE8;
+      color: #1a9e00;
+    }
+    .platform-badge.coupang {
+      background: #FFF0E8;
+      color: #e6450a;
+    }
+
+    /* Card */
+    .card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+
+    /* Status */
+    .status {
       font-size: 13px;
+      color: #86868B;
+      text-align: center;
+      padding: 6px 0 2px;
+    }
+    .status.error {
+      color: #FF3B30;
+    }
+    .status.success {
+      color: #34C759;
+    }
+
+    /* Form */
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #86868B;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .field + .field { margin-top: 10px; }
+
+    select, input[type="month"] {
+      width: 100%;
+      height: 36px;
+      padding: 0 11px;
+      background: #F5F5F7;
+      border: none;
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      color: #1D1D1F;
       outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: box-shadow 150ms ease;
     }
-    select:focus, input:focus {
-      border-color: #1ec800;
+    select:focus, input[type="month"]:focus {
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
     }
+
     .row {
       display: flex;
       gap: 8px;
+      align-items: flex-end;
     }
-    .row > * { flex: 1; }
+    .row > .field { flex: 1; }
+
+    /* Buttons */
     .btn {
       width: 100%;
-      padding: 10px;
+      padding: 10px 16px;
       border: none;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 150ms ease;
     }
+    .btn + .btn { margin-top: 8px; }
     .btn-primary {
-      background: #1ec800;
+      background: #007AFF;
       color: #fff;
     }
-    .btn-primary:hover { background: #1ab600; }
+    .btn-primary:hover { background: #0066d6; }
+    .btn-primary:active { background: #0055b3; }
     .btn-primary:disabled {
-      background: #ccc;
+      background: #AEAEB2;
       cursor: not-allowed;
     }
     .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-      margin-top: 6px;
+      background: #F5F5F7;
+      color: #1D1D1F;
     }
-    .btn-secondary:hover { background: #e0e0e0; }
+    .btn-secondary:hover { background: #E5E5EA; }
+    .btn-secondary:active { background: #D1D1D6; }
     .btn-secondary:disabled {
-      color: #aaa;
+      color: #AEAEB2;
       cursor: not-allowed;
     }
-    .progress {
-      display: none;
-      margin-top: 12px;
-    }
-    .progress-bar {
-      height: 6px;
-      background: #eee;
-      border-radius: 3px;
+
+    /* Progress */
+    .progress { display: none; margin-top: 10px; }
+    .progress-track {
+      height: 4px;
+      background: #E5E5EA;
+      border-radius: 2px;
       overflow: hidden;
     }
     .progress-fill {
       height: 100%;
-      background: #1ec800;
+      background: #007AFF;
       width: 0%;
-      transition: width 0.3s;
+      transition: width 300ms ease-out;
+      border-radius: 2px;
     }
-    .progress-text {
-      font-size: 12px;
-      color: #888;
-      margin-top: 4px;
+    .progress-label {
+      font-size: 11px;
+      color: #86868B;
+      margin-top: 5px;
       text-align: center;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: #E5E5EA;
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
-  <h1>NPay Exporter</h1>
 
-  <div id="status" class="info">페이지 정보를 확인하는 중...</div>
+  <div class="header">
+    <div class="logo">e</div>
+    <div class="header-text">
+      <div class="header-title">eolma exporter</div>
+      <div id="headerSubtitle" class="header-subtitle">결제내역 내보내기</div>
+    </div>
+    <span id="platformBadge" class="platform-badge"></span>
+  </div>
+
+  <div class="card">
+    <div id="status" class="status">페이지 정보를 확인하는 중...</div>
+  </div>
 
   <div id="controls" style="display:none;">
-    <div class="section">
-      <label>다운로드 범위</label>
-      <select id="rangeType">
-        <option value="month" selected>월 선택</option>
-        <option value="range">기간 선택</option>
-        <option value="all">전체</option>
-      </select>
+    <div class="card">
+      <div class="field">
+        <div class="field-label">다운로드 범위</div>
+        <select id="rangeType">
+          <option value="month" selected>월 선택</option>
+          <option value="range">기간 선택</option>
+          <option value="all">전체</option>
+        </select>
+      </div>
+
+      <div id="monthSelect">
+        <div class="divider"></div>
+        <div class="row">
+          <div class="field">
+            <div class="field-label">년도</div>
+            <select id="year"></select>
+          </div>
+          <div class="field">
+            <div class="field-label">월</div>
+            <select id="month"></select>
+          </div>
+        </div>
+      </div>
+
+      <div id="rangeSelect" style="display:none;">
+        <div class="divider"></div>
+        <div class="field">
+          <div class="field-label">시작</div>
+          <input type="month" id="startMonth">
+        </div>
+        <div class="field">
+          <div class="field-label">끝</div>
+          <input type="month" id="endMonth">
+        </div>
+      </div>
     </div>
 
-    <div id="monthSelect" class="section">
+    <div class="card">
+      <button id="btnExcel" class="btn btn-primary">Excel 다운로드</button>
+      <button id="btnCsv" class="btn btn-secondary">CSV 다운로드</button>
+
+      <div class="divider"></div>
+
+      <div class="field-label" style="margin-bottom: 6px;">전체 기간</div>
       <div class="row">
-        <div>
-          <label>년도</label>
-          <select id="year"></select>
+        <button id="btnAllExcel" class="btn btn-secondary" style="font-size: 13px;">전체 Excel</button>
+        <button id="btnAllCsv" class="btn btn-secondary" style="font-size: 13px;">전체 CSV</button>
+      </div>
+
+      <div id="progress" class="progress">
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
         </div>
-        <div>
-          <label>월</label>
-          <select id="month"></select>
+        <div id="progressText" class="progress-label"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eolma-auth">
+        <div class="eolma-auth-left">
+          <div id="eolmaStatusDot" class="status-dot dot-off"></div>
+          <span id="eolmaStatusText" class="eolma-auth-label">eolma 미로그인</span>
         </div>
+        <span id="eolmaUserName" class="eolma-auth-user"></span>
       </div>
-    </div>
-
-    <div id="rangeSelect" class="section" style="display:none;">
-      <div>
-        <label>시작 (년-월)</label>
-        <input type="month" id="startMonth" style="margin-bottom:8px;">
-      </div>
-      <div>
-        <label>끝 (년-월)</label>
-        <input type="month" id="endMonth">
-      </div>
-    </div>
-
-    <div class="section">
-      <button id="btnCsv" class="btn btn-primary">CSV 다운로드</button>
-      <button id="btnExcel" class="btn btn-secondary">Excel 다운로드</button>
-    </div>
-
-    <div id="progress" class="progress">
-      <div class="progress-bar">
-        <div id="progressFill" class="progress-fill"></div>
-      </div>
-      <div id="progressText" class="progress-text"></div>
+      <button id="btnEolmaLogin" class="btn btn-eolma">eolma 로그인</button>
+      <button id="btnEolmaUpload" class="btn btn-eolma" style="display:none;">eolma로 전송</button>
     </div>
   </div>
 
   <script src="lib/xlsx.min.js"></script>
+  <script src="eolma/api.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

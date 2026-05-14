@@ -11,21 +11,80 @@ const startMonthEl = document.getElementById('startMonth');
 const endMonthEl = document.getElementById('endMonth');
 const btnCsv = document.getElementById('btnCsv');
 const btnExcel = document.getElementById('btnExcel');
+const btnAllExcel = document.getElementById('btnAllExcel');
+const btnAllCsv = document.getElementById('btnAllCsv');
+const btnEolmaLogin = document.getElementById('btnEolmaLogin');
+const btnEolmaUpload = document.getElementById('btnEolmaUpload');
+const eolmaStatusDot = document.getElementById('eolmaStatusDot');
+const eolmaStatusText = document.getElementById('eolmaStatusText');
+const eolmaUserName = document.getElementById('eolmaUserName');
 const progressEl = document.getElementById('progress');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
+const platformBadgeEl = document.getElementById('platformBadge');
+const headerSubtitleEl = document.getElementById('headerSubtitle');
 
 let currentPageData = null;
+let activePlatform = null;
+let exportAll = false;
+
+const PLATFORM_LABELS = {
+  naverpay: '네이버페이',
+  coupang: '쿠팡'
+};
+
+function detectPlatform(url) {
+  if (url.includes('pay.naver.com/pc/history')) return 'naverpay';
+  if (url.includes('mc.coupang.com/ssr/desktop/order/list')) return 'coupang';
+  return null;
+}
+
+function showPlatformBadge(platform) {
+  if (!platform) {
+    platformBadgeEl.style.display = 'none';
+    return;
+  }
+  platformBadgeEl.textContent = PLATFORM_LABELS[platform] || platform;
+  platformBadgeEl.className = `platform-badge ${platform}`;
+  platformBadgeEl.style.display = 'inline-block';
+  if (headerSubtitleEl) {
+    headerSubtitleEl.textContent = `${PLATFORM_LABELS[platform] || platform} 결제내역 내보내기`;
+  }
+}
+
+function renderEolmaAuth(authResult) {
+  if (authResult.loggedIn) {
+    eolmaStatusDot.className = 'status-dot dot-on';
+    eolmaStatusText.textContent = '로그인됨';
+    eolmaUserName.textContent = authResult.user?.name || '';
+    btnEolmaLogin.style.display = 'none';
+    btnEolmaUpload.style.display = 'block';
+  } else {
+    eolmaStatusDot.className = 'status-dot dot-off';
+    eolmaStatusText.textContent = 'eolma 미로그인';
+    eolmaUserName.textContent = '';
+    btnEolmaLogin.style.display = 'block';
+    btnEolmaUpload.style.display = 'none';
+  }
+}
 
 // 초기화
 async function init() {
+  // eolma 로그인 상태 확인
+  const authResult = await eolmaApi.checkAuth();
+  renderEolmaAuth(authResult);
+
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    if (!tab.url || !tab.url.includes('pay.naver.com/pc/history')) {
-      showError('네이버페이 결제내역 페이지에서 실행해주세요.\n(pay.naver.com/pc/history)');
+    activePlatform = detectPlatform(tab.url || '');
+
+    if (!activePlatform) {
+      showError('네이버페이 또는 쿠팡 주문내역 페이지에서 실행해주세요.');
       return;
     }
+
+    showPlatformBadge(activePlatform);
 
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_PAGE' });
 
@@ -37,7 +96,12 @@ async function init() {
     currentPageData = response;
     initDateSelectors();
 
-    statusEl.textContent = `총 ${response.totalPage}페이지 (약 ${response.totalPage * response.itemCount}건)`;
+    if (activePlatform === 'coupang') {
+      const more = response.hasNext ? ' (다음 페이지 있음)' : '';
+      statusEl.textContent = `현재 페이지 ${response.itemCount}건${more}`;
+    } else {
+      statusEl.textContent = `총 ${response.totalPage}페이지 (약 ${response.totalPage * response.itemCount}건)`;
+    }
     controlsEl.style.display = 'block';
   } catch (e) {
     showError('데이터를 가져올 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.');
@@ -49,7 +113,6 @@ function initDateSelectors() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
 
-  // 년도 셀렉터 (현재년도 ~ 5년 전)
   for (let y = currentYear; y >= currentYear - 5; y--) {
     const opt = document.createElement('option');
     opt.value = y;
@@ -57,7 +120,6 @@ function initDateSelectors() {
     yearEl.appendChild(opt);
   }
 
-  // 월 셀렉터
   for (let m = 1; m <= 12; m++) {
     const opt = document.createElement('option');
     opt.value = String(m).padStart(2, '0');
@@ -65,11 +127,9 @@ function initDateSelectors() {
     monthEl.appendChild(opt);
   }
 
-  // 현재 월 선택
   yearEl.value = currentYear;
   monthEl.value = String(currentMonth).padStart(2, '0');
 
-  // 기간 선택 기본값
   const pad = (n) => String(n).padStart(2, '0');
   endMonthEl.value = `${currentYear}-${pad(currentMonth)}`;
   startMonthEl.value = `${currentYear}-${pad(currentMonth)}`;
@@ -95,25 +155,40 @@ rangeTypeEl.addEventListener('change', () => {
 // 진행 상황 리스너
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'FETCH_PROGRESS') {
-    const pct = Math.round((message.current / message.total) * 100);
-    progressFill.style.width = pct + '%';
     const countText = message.itemCount ? ` (${message.itemCount}건 수집)` : '';
-    progressText.textContent = `${message.current} / ${message.total} 페이지 검색 중...${countText}`;
+    if (message.total == null) {
+      progressFill.style.width = '100%';
+      progressFill.style.opacity = '0.5';
+      progressText.textContent = `${message.current}페이지 검색 중...${countText}`;
+    } else {
+      const pct = Math.round((message.current / message.total) * 100);
+      progressFill.style.width = pct + '%';
+      progressFill.style.opacity = '1';
+      progressText.textContent = `${message.current} / ${message.total} 페이지 검색 중...${countText}`;
+    }
   }
 });
 
 // 다운로드 버튼
 btnCsv.addEventListener('click', () => startExport('csv'));
 btnExcel.addEventListener('click', () => startExport('excel'));
+btnAllExcel.addEventListener('click', () => startExport('excel', true));
+btnAllCsv.addEventListener('click', () => startExport('csv', true));
 
-async function startExport(format) {
+// eolma 버튼
+btnEolmaLogin.addEventListener('click', () => eolmaApi.openLoginPage());
+btnEolmaUpload.addEventListener('click', startEolmaUpload);
+
+async function startExport(format, all = false) {
+  exportAll = all;
   setButtonsDisabled(true);
   progressEl.style.display = 'block';
   progressFill.style.width = '0%';
+  progressFill.style.opacity = '1';
   progressText.textContent = '데이터 수집 시작...';
 
   try {
-    const items = await collectItems();
+    const items = await collectItems(all);
     if (!items || items.length === 0) {
       showError('해당 기간에 결제내역이 없습니다.');
       setButtonsDisabled(false);
@@ -122,9 +197,9 @@ async function startExport(format) {
     }
 
     if (format === 'csv') {
-      downloadCsv(items);
+      await downloadCsv(items);
     } else {
-      downloadExcel(items);
+      await downloadExcel(items);
     }
 
     showStatus(`${items.length}건 다운로드 완료!`);
@@ -151,17 +226,16 @@ function getSelectedRange() {
     };
   }
 
-  // 전체
   return null;
 }
 
-async function collectItems() {
-  const range = getSelectedRange();
+async function collectItems(all = false) {
+  const range = all ? null : getSelectedRange();
 
   if (range) {
-    // 월별/기간별 fetch
     const response = await chrome.runtime.sendMessage({
       type: 'FETCH_BY_MONTH',
+      platform: activePlatform,
       startMonth: range.startMonth,
       endMonth: range.endMonth
     });
@@ -175,9 +249,9 @@ async function collectItems() {
     return response.items;
   }
 
-  // 전체 fetch
   const response = await chrome.runtime.sendMessage({
     type: 'FETCH_ALL_PAGES',
+    platform: activePlatform,
     fromPage: 1
   });
 
@@ -196,10 +270,50 @@ async function collectItems() {
 function setButtonsDisabled(disabled) {
   btnCsv.disabled = disabled;
   btnExcel.disabled = disabled;
+  btnAllExcel.disabled = disabled;
+  btnAllCsv.disabled = disabled;
+  btnEolmaUpload.disabled = disabled;
+}
+
+async function startEolmaUpload() {
+  setButtonsDisabled(true);
+  progressEl.style.display = 'block';
+  progressFill.style.width = '0%';
+  progressFill.style.opacity = '1';
+  progressText.textContent = '데이터 수집 중...';
+
+  try {
+    exportAll = false;
+    const items = await collectItems();
+    if (!items || items.length === 0) {
+      showError('해당 기간에 결제내역이 없습니다.');
+      setButtonsDisabled(false);
+      progressEl.style.display = 'none';
+      return;
+    }
+
+    progressFill.style.width = '70%';
+    progressText.textContent = `${items.length}건 eolma로 전송 중...`;
+
+    const range = getSelectedRange();
+    const period = range
+      ? { start: range.startMonth + '-01', end: range.endMonth + '-31' }
+      : null;
+
+    const result = await eolmaApi.send({ platform: activePlatform, items, period });
+
+    progressFill.style.width = '100%';
+    showStatus(`eolma 전송 완료! (${result.uploadedCount}건)`);
+  } catch (e) {
+    showError('전송 실패: ' + e.message);
+  }
+
+  progressEl.style.display = 'none';
+  setButtonsDisabled(false);
 }
 
 // CSV 다운로드
-function downloadCsv(items) {
+async function downloadCsv(items) {
   if (items.length === 0) return;
 
   const headers = Object.keys(items[0]);
@@ -222,10 +336,10 @@ function downloadCsv(items) {
 }
 
 // Excel 다운로드
-function downloadExcel(items) {
+async function downloadExcel(items) {
   if (typeof XLSX === 'undefined') {
     showError('Excel 라이브러리를 로드할 수 없습니다. CSV로 다운로드합니다.');
-    downloadCsv(items);
+    await downloadCsv(items);
     return;
   }
 
@@ -239,14 +353,15 @@ function downloadExcel(items) {
 }
 
 function generateFilename(ext) {
-  const range = getSelectedRange();
+  const platform = activePlatform || 'eolma';
+  const range = exportAll ? null : getSelectedRange();
   if (range) {
     if (range.startMonth === range.endMonth) {
-      return `npay_history_${range.startMonth}.${ext}`;
+      return `${platform}_${range.startMonth}.${ext}`;
     }
-    return `npay_history_${range.startMonth}_${range.endMonth}.${ext}`;
+    return `${platform}_${range.startMonth}_${range.endMonth}.${ext}`;
   }
-  return `npay_history_all.${ext}`;
+  return `${platform}_all.${ext}`;
 }
 
 function downloadBlob(blob, filename) {

@@ -1,14 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "NPay Exporter",
-  "version": "1.0.0",
-  "description": "네이버페이 결제내역을 Excel/CSV로 내보내기",
+  "name": "Eolma Exporter",
+  "version": "2.0.0",
+  "description": "네이버페이/쿠팡 결제내역을 Excel/CSV로 내보내기",
   "permissions": [
     "activeTab",
-    "downloads"
+    "downloads",
+    "storage"
   ],
   "host_permissions": [
-    "https://pay.naver.com/*"
+    "https://pay.naver.com/*",
+    "https://mc.coupang.com/*",
+    "http://localhost:3000/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -16,7 +19,12 @@
   "content_scripts": [
     {
       "matches": ["https://pay.naver.com/pc/history*"],
-      "js": ["content.js"],
+      "js": ["content/naverpay.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://mc.coupang.com/ssr/desktop/order/list*"],
+      "js": ["content/coupang.js"],
       "run_at": "document_idle"
     }
   ],
