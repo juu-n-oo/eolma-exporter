@@ -204,6 +204,7 @@
       background: #E5E5EA;
       border-radius: 2px;
       overflow: hidden;
+      position: relative;
     }
     .progress-fill {
       height: 100%;
@@ -211,6 +212,15 @@
       width: 0%;
       transition: width 300ms ease-out;
       border-radius: 2px;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-100%); width: 45%; }
+      100% { transform: translateX(280%);  width: 45%; }
+    }
+    .progress-fill.indeterminate {
+      width: 45%;
+      transition: none;
+      animation: indeterminate 1.3s ease-in-out infinite;
     }
     .progress-label {
       font-size: 11px;

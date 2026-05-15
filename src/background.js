@@ -57,11 +57,19 @@ async function fetchByMonth(startMonth, endMonth) {
   allItems = allItems.concat(filtered.matched);
   done = filtered.allOlderThanStart;
 
+  chrome.runtime.sendMessage({
+    type: 'FETCH_PROGRESS',
+    current: 1,
+    total: totalPage,
+    itemCount: allItems.length
+  }).catch(() => {});
+
   // 나머지 페이지 순차 fetch
   while (!done && page < totalPage) {
     page++;
     const result = await fetchPageRaw(page);
     if (!result.success) {
+      if (result.code === 'AUTH_ERROR') return result;
       // 부분 결과 반환
       return {
         success: true,
@@ -122,6 +130,7 @@ async function fetchAllPages(fromPage, toPage) {
   for (let page = fromPage + 1; page <= totalPage; page++) {
     const result = await fetchPageRaw(page);
     if (!result.success) {
+      if (result.code === 'AUTH_ERROR') return result;
       return {
         success: false,
         error: `${page}페이지 로드 실패: ${result.error}`,
@@ -153,13 +162,13 @@ async function fetchPageRaw(page) {
     });
 
     if (!resp.ok) {
-      return { success: false, error: `HTTP ${resp.status}` };
+      return { success: false, error: httpErrorMessage(resp.status), code: httpErrorCode(resp.status) };
     }
 
     const html = await resp.text();
     return parseNextDataFromHtml(html);
   } catch (e) {
-    return { success: false, error: e.message };
+    return { success: false, error: '네트워크 연결을 확인해주세요.', code: 'NETWORK_ERROR' };
   }
 }
 
@@ -235,6 +244,7 @@ async function fetchCoupangByMonth(startMonth, endMonth) {
   while (!done) {
     const result = await fetchCoupangPageRaw(pageIndex);
     if (!result.success) {
+      if (result.code === 'AUTH_ERROR') return result;
       if (allItems.length > 0) {
         return { success: true, items: allItems.map(formatCoupangItem), partial: true };
       }
@@ -271,6 +281,7 @@ async function fetchCoupangAllPages() {
   while (hasNext) {
     const result = await fetchCoupangPageRaw(pageIndex);
     if (!result.success) {
+      if (result.code === 'AUTH_ERROR') return result;
       if (allItems.length > 0) {
         return {
           success: false,
@@ -307,14 +318,27 @@ async function fetchCoupangPageRaw(pageIndex) {
     });
 
     if (!resp.ok) {
-      return { success: false, error: `HTTP ${resp.status}` };
+      return { success: false, error: httpErrorMessage(resp.status), code: httpErrorCode(resp.status) };
     }
 
     const html = await resp.text();
     return parseCoupangNextDataFromHtml(html);
   } catch (e) {
-    return { success: false, error: e.message };
+    return { success: false, error: '네트워크 연결을 확인해주세요.', code: 'NETWORK_ERROR' };
   }
+}
+
+function httpErrorMessage(status) {
+  if (status === 401 || status === 403) return '로그인이 만료되었습니다. 해당 사이트에 다시 로그인해주세요.';
+  if (status === 429) return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+  if (status >= 500) return `서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`;
+  return `페이지를 불러오지 못했습니다. (HTTP ${status})`;
+}
+
+function httpErrorCode(status) {
+  if (status === 401 || status === 403) return 'AUTH_ERROR';
+  if (status === 429) return 'RATE_LIMIT';
+  return 'HTTP_ERROR';
 }
 
 function parseCoupangNextDataFromHtml(html) {

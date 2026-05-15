@@ -104,7 +104,11 @@ async function init() {
     }
     controlsEl.style.display = 'block';
   } catch (e) {
-    showError('데이터를 가져올 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.');
+    if (e?.message?.includes('Could not establish connection') || e?.message?.includes('Receiving end does not exist')) {
+      showError('페이지를 새로고침한 뒤 익스텐션 아이콘을 다시 클릭해주세요.');
+    } else {
+      showError('데이터를 가져올 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.');
+    }
   }
 }
 
@@ -157,13 +161,12 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'FETCH_PROGRESS') {
     const countText = message.itemCount ? ` (${message.itemCount}건 수집)` : '';
     if (message.total == null) {
-      progressFill.style.width = '100%';
-      progressFill.style.opacity = '0.5';
+      progressFill.classList.add('indeterminate');
       progressText.textContent = `${message.current}페이지 검색 중...${countText}`;
     } else {
+      progressFill.classList.remove('indeterminate');
       const pct = Math.round((message.current / message.total) * 100);
       progressFill.style.width = pct + '%';
-      progressFill.style.opacity = '1';
       progressText.textContent = `${message.current} / ${message.total} 페이지 검색 중...${countText}`;
     }
   }
@@ -183,16 +186,14 @@ async function startExport(format, all = false) {
   exportAll = all;
   setButtonsDisabled(true);
   progressEl.style.display = 'block';
+  progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
-  progressFill.style.opacity = '1';
   progressText.textContent = '데이터 수집 시작...';
 
   try {
     const items = await collectItems(all);
     if (!items || items.length === 0) {
       showError('해당 기간에 결제내역이 없습니다.');
-      setButtonsDisabled(false);
-      progressEl.style.display = 'none';
       return;
     }
 
@@ -204,11 +205,12 @@ async function startExport(format, all = false) {
 
     showStatus(`${items.length}건 다운로드 완료!`);
   } catch (e) {
-    showError('다운로드 실패: ' + e.message);
+    showError(e.message);
+  } finally {
+    progressFill.classList.remove('indeterminate');
+    progressEl.style.display = 'none';
+    setButtonsDisabled(false);
   }
-
-  progressEl.style.display = 'none';
-  setButtonsDisabled(false);
 }
 
 function getSelectedRange() {
@@ -241,9 +243,10 @@ async function collectItems(all = false) {
     });
 
     if (!response.success) {
-      throw new Error(response.error);
+      throw new Error(response.error || '데이터 수집에 실패했습니다.');
     }
 
+    progressFill.classList.remove('indeterminate');
     progressFill.style.width = '100%';
     progressText.textContent = `완료! (${response.items.length}건)`;
     return response.items;
@@ -259,7 +262,7 @@ async function collectItems(all = false) {
     if (response.partialItems && response.partialItems.length > 0) {
       return response.partialItems;
     }
-    throw new Error(response.error);
+    throw new Error(response.error || '데이터 수집에 실패했습니다.');
   }
 
   progressFill.style.width = '100%';
@@ -276,22 +279,21 @@ function setButtonsDisabled(disabled) {
 }
 
 async function startEolmaUpload() {
+  exportAll = false;
   setButtonsDisabled(true);
   progressEl.style.display = 'block';
+  progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
-  progressFill.style.opacity = '1';
   progressText.textContent = '데이터 수집 중...';
 
   try {
-    exportAll = false;
     const items = await collectItems();
     if (!items || items.length === 0) {
       showError('해당 기간에 결제내역이 없습니다.');
-      setButtonsDisabled(false);
-      progressEl.style.display = 'none';
       return;
     }
 
+    progressFill.classList.remove('indeterminate');
     progressFill.style.width = '70%';
     progressText.textContent = `${items.length}건 eolma로 전송 중...`;
 
@@ -306,10 +308,11 @@ async function startEolmaUpload() {
     showStatus(`eolma 전송 완료! (${result.uploadedCount}건)`);
   } catch (e) {
     showError('전송 실패: ' + e.message);
+  } finally {
+    progressFill.classList.remove('indeterminate');
+    progressEl.style.display = 'none';
+    setButtonsDisabled(false);
   }
-
-  progressEl.style.display = 'none';
-  setButtonsDisabled(false);
 }
 
 // CSV 다운로드
