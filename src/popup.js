@@ -23,6 +23,7 @@ const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 const platformBadgeEl = document.getElementById('platformBadge');
 const headerSubtitleEl = document.getElementById('headerSubtitle');
+const eolmaLinkEl = document.getElementById('eolmaLink');
 
 let currentPageData = null;
 let activePlatform = null;
@@ -70,6 +71,9 @@ function renderEolmaAuth(authResult) {
 
 // 초기화
 async function init() {
+  // eolma 링크 설정
+  eolmaLinkEl.href = 'https://eolma.de';
+
   // eolma 로그인 상태 확인
   const authResult = await eolmaApi.checkAuth();
   renderEolmaAuth(authResult);

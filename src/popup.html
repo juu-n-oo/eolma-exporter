@@ -235,6 +235,22 @@
       background: #E5E5EA;
       margin: 10px 0;
     }
+
+    /* Footer Link */
+    .footer {
+      text-align: center;
+      margin-top: 12px;
+    }
+    .footer-link {
+      font-size: 12px;
+      color: #007AFF;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 150ms ease;
+    }
+    .footer-link:hover {
+      color: #0055b3;
+    }
   </style>
 </head>
 <body>
@@ -320,6 +336,10 @@
       </div>
       <button id="btnEolmaLogin" class="btn btn-eolma">eolma 로그인</button>
       <button id="btnEolmaUpload" class="btn btn-eolma" style="display:none;">eolma로 전송</button>
+    </div>
+
+    <div class="footer">
+      <a id="eolmaLink" class="footer-link" target="_blank">eolma 가계부 방문 →</a>
     </div>
   </div>
 
