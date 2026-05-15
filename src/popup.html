@@ -258,7 +258,7 @@
   <div class="header">
     <div class="logo">e</div>
     <div class="header-text">
-      <div class="header-title">eolma exporter</div>
+      <div id="headerTitle" class="header-title">eolma exporter</div>
       <div id="headerSubtitle" class="header-subtitle">결제내역 내보내기</div>
     </div>
     <span id="platformBadge" class="platform-badge"></span>
@@ -271,11 +271,11 @@
   <div id="controls" style="display:none;">
     <div class="card">
       <div class="field">
-        <div class="field-label">다운로드 범위</div>
+        <div id="downloadRangeLabel" class="field-label">다운로드 범위</div>
         <select id="rangeType">
-          <option value="month" selected>월 선택</option>
-          <option value="range">기간 선택</option>
-          <option value="all">전체</option>
+          <option value="month" selected></option>
+          <option value="range"></option>
+          <option value="all"></option>
         </select>
       </div>
 
@@ -283,11 +283,11 @@
         <div class="divider"></div>
         <div class="row">
           <div class="field">
-            <div class="field-label">년도</div>
+            <div id="yearLabel" class="field-label">년도</div>
             <select id="year"></select>
           </div>
           <div class="field">
-            <div class="field-label">월</div>
+            <div id="monthLabel" class="field-label">월</div>
             <select id="month"></select>
           </div>
         </div>
@@ -296,26 +296,26 @@
       <div id="rangeSelect" style="display:none;">
         <div class="divider"></div>
         <div class="field">
-          <div class="field-label">시작</div>
+          <div id="startLabel" class="field-label">시작</div>
           <input type="month" id="startMonth">
         </div>
         <div class="field">
-          <div class="field-label">끝</div>
+          <div id="endLabel" class="field-label">끝</div>
           <input type="month" id="endMonth">
         </div>
       </div>
     </div>
 
     <div class="card">
-      <button id="btnExcel" class="btn btn-primary">Excel 다운로드</button>
-      <button id="btnCsv" class="btn btn-secondary">CSV 다운로드</button>
+      <button id="btnExcel" class="btn btn-primary"></button>
+      <button id="btnCsv" class="btn btn-secondary"></button>
 
       <div class="divider"></div>
 
-      <div class="field-label" style="margin-bottom: 6px;">전체 기간</div>
+      <div id="allPeriodLabel" class="field-label" style="margin-bottom: 6px;">전체 기간</div>
       <div class="row">
-        <button id="btnAllExcel" class="btn btn-secondary" style="font-size: 13px;">전체 Excel</button>
-        <button id="btnAllCsv" class="btn btn-secondary" style="font-size: 13px;">전체 CSV</button>
+        <button id="btnAllExcel" class="btn btn-secondary" style="font-size: 13px;"></button>
+        <button id="btnAllCsv" class="btn btn-secondary" style="font-size: 13px;"></button>
       </div>
 
       <div id="progress" class="progress">
@@ -330,16 +330,16 @@
       <div class="eolma-auth">
         <div class="eolma-auth-left">
           <div id="eolmaStatusDot" class="status-dot dot-off"></div>
-          <span id="eolmaStatusText" class="eolma-auth-label">eolma 미로그인</span>
+          <span id="eolmaStatusText" class="eolma-auth-label"></span>
         </div>
         <span id="eolmaUserName" class="eolma-auth-user"></span>
       </div>
-      <button id="btnEolmaLogin" class="btn btn-eolma">eolma 로그인</button>
-      <button id="btnEolmaUpload" class="btn btn-eolma" style="display:none;">eolma로 전송</button>
+      <button id="btnEolmaLogin" class="btn btn-eolma"></button>
+      <button id="btnEolmaUpload" class="btn btn-eolma" style="display:none;"></button>
     </div>
 
     <div class="footer">
-      <a id="eolmaLink" class="footer-link" target="_blank">eolma 가계부 방문 →</a>
+      <a id="eolmaLink" class="footer-link" target="_blank"></a>
     </div>
   </div>
 

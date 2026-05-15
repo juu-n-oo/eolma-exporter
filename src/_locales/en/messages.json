@@ -1,0 +1,228 @@
+{
+  "appName": {
+    "message": "Eolma Exporter",
+    "description": "Application name"
+  },
+  "appDesc": {
+    "message": "Export payment history from Naver Pay and Coupang to Excel/CSV",
+    "description": "Application description"
+  },
+  "headerTitle": {
+    "message": "eolma exporter",
+    "description": "Popup header title"
+  },
+  "headerSubtitle": {
+    "message": "Export payment history",
+    "description": "Popup header subtitle"
+  },
+  "loadingPage": {
+    "message": "Checking page information...",
+    "description": "Loading page info"
+  },
+  "unsupportedPage": {
+    "message": "Please use this extension on a Naver Pay or Coupang order history page.",
+    "description": "Unsupported page message"
+  },
+  "refreshPage": {
+    "message": "Please refresh the page and click the extension icon again.",
+    "description": "Page refresh request"
+  },
+  "dataFetchFailed": {
+    "message": "Failed to retrieve data. Please refresh the page.",
+    "description": "Data collection failed"
+  },
+  "downloadRange": {
+    "message": "Download Range",
+    "description": "Download range label"
+  },
+  "selectMonth": {
+    "message": "Select Month",
+    "description": "Select month option"
+  },
+  "selectRange": {
+    "message": "Select Range",
+    "description": "Select range option"
+  },
+  "selectAll": {
+    "message": "All",
+    "description": "Select all option"
+  },
+  "year": {
+    "message": "Year",
+    "description": "Year label"
+  },
+  "month": {
+    "message": "Month",
+    "description": "Month label"
+  },
+  "start": {
+    "message": "Start",
+    "description": "Start date label"
+  },
+  "end": {
+    "message": "End",
+    "description": "End date label"
+  },
+  "downloadExcel": {
+    "message": "Download Excel",
+    "description": "Download Excel button"
+  },
+  "downloadCsv": {
+    "message": "Download CSV",
+    "description": "Download CSV button"
+  },
+  "allPeriod": {
+    "message": "All Periods",
+    "description": "All periods label"
+  },
+  "allExcel": {
+    "message": "All Excel",
+    "description": "All Excel download button"
+  },
+  "allCsv": {
+    "message": "All CSV",
+    "description": "All CSV download button"
+  },
+  "eolmaLoggedOut": {
+    "message": "Eolma Not Logged In",
+    "description": "Eolma logged out state"
+  },
+  "eolmaLoggedIn": {
+    "message": "Logged In",
+    "description": "Eolma logged in state"
+  },
+  "eolmaLogin": {
+    "message": "Login to Eolma",
+    "description": "Login button"
+  },
+  "eolmaUpload": {
+    "message": "Send to Eolma",
+    "description": "Send to Eolma button"
+  },
+  "visitEolma": {
+    "message": "Visit Eolma Ledger →",
+    "description": "Visit Eolma link"
+  },
+  "currentPageInfo": {
+    "message": "$COUNT$ items on current page",
+    "description": "Current page item count",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "15"
+      }
+    }
+  },
+  "nextPageAvailable": {
+    "message": "(More pages available)",
+    "description": "More pages available indicator"
+  },
+  "totalPageInfo": {
+    "message": "$TOTAL$ total pages (approximately $COUNT$ items)",
+    "description": "Total pages and item count",
+    "placeholders": {
+      "total": {
+        "content": "$1",
+        "example": "10"
+      },
+      "count": {
+        "content": "$2",
+        "example": "150"
+      }
+    }
+  },
+  "collecting": {
+    "message": "Starting data collection...",
+    "description": "Data collection started message"
+  },
+  "noData": {
+    "message": "No payment history found for this period.",
+    "description": "No data message"
+  },
+  "downloadComplete": {
+    "message": "Downloaded $COUNT$ items!",
+    "description": "Download complete message",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "collectFailed": {
+    "message": "Failed to collect data.",
+    "description": "Data collection failed"
+  },
+  "searching": {
+    "message": "Searching page $CURRENT$... ($ITEMS$ items collected)",
+    "description": "Searching message",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "5"
+      },
+      "items": {
+        "content": "$2",
+        "example": "75"
+      }
+    }
+  },
+  "searchingTotal": {
+    "message": "Searching pages $CURRENT$ / $TOTAL$... ($ITEMS$ items collected)",
+    "description": "Searching all pages message",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "5"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      },
+      "items": {
+        "content": "$3",
+        "example": "75"
+      }
+    }
+  },
+  "uploading": {
+    "message": "Sending $COUNT$ items to Eolma...",
+    "description": "Upload in progress message",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "uploadComplete": {
+    "message": "Successfully sent to Eolma! ($COUNT$ items)",
+    "description": "Upload complete message",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "uploadFailed": {
+    "message": "Send failed: ",
+    "description": "Upload failed message prefix"
+  },
+  "excelLoadError": {
+    "message": "Unable to load Excel library. Downloading as CSV instead.",
+    "description": "Excel library load failed"
+  },
+  "paymentHistory": {
+    "message": "Payment History",
+    "description": "Excel sheet name"
+  },
+  "naverpay": {
+    "message": "Naver Pay",
+    "description": "Naver Pay platform name"
+  },
+  "coupang": {
+    "message": "Coupang",
+    "description": "Coupang platform name"
+  }
+}

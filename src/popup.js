@@ -1,5 +1,12 @@
 // Popup 로직
 
+// i18n helper
+const i18n = {
+  get(key, placeholders = []) {
+    return chrome.i18n.getMessage(key, placeholders);
+  }
+};
+
 const statusEl = document.getElementById('status');
 const controlsEl = document.getElementById('controls');
 const rangeTypeEl = document.getElementById('rangeType');
@@ -29,9 +36,12 @@ let currentPageData = null;
 let activePlatform = null;
 let exportAll = false;
 
-const PLATFORM_LABELS = {
-  naverpay: '네이버페이',
-  coupang: '쿠팡'
+const getPlatformLabel = (platform) => {
+  const labels = {
+    naverpay: i18n.get('naverpay'),
+    coupang: i18n.get('coupang')
+  };
+  return labels[platform] || platform;
 };
 
 function detectPlatform(url) {
@@ -45,34 +55,53 @@ function showPlatformBadge(platform) {
     platformBadgeEl.style.display = 'none';
     return;
   }
-  platformBadgeEl.textContent = PLATFORM_LABELS[platform] || platform;
+  platformBadgeEl.textContent = getPlatformLabel(platform);
   platformBadgeEl.className = `platform-badge ${platform}`;
   platformBadgeEl.style.display = 'inline-block';
   if (headerSubtitleEl) {
-    headerSubtitleEl.textContent = `${PLATFORM_LABELS[platform] || platform} 결제내역 내보내기`;
+    headerSubtitleEl.textContent = `${getPlatformLabel(platform)} ${i18n.get('headerSubtitle')}`;
   }
 }
 
 function renderEolmaAuth(authResult) {
   if (authResult.loggedIn) {
     eolmaStatusDot.className = 'status-dot dot-on';
-    eolmaStatusText.textContent = '로그인됨';
+    eolmaStatusText.textContent = i18n.get('eolmaLoggedIn');
     eolmaUserName.textContent = authResult.user?.name || '';
     btnEolmaLogin.style.display = 'none';
     btnEolmaUpload.style.display = 'block';
+    btnEolmaUpload.textContent = i18n.get('eolmaUpload');
   } else {
     eolmaStatusDot.className = 'status-dot dot-off';
-    eolmaStatusText.textContent = 'eolma 미로그인';
+    eolmaStatusText.textContent = i18n.get('eolmaLoggedOut');
     eolmaUserName.textContent = '';
     btnEolmaLogin.style.display = 'block';
     btnEolmaUpload.style.display = 'none';
+    btnEolmaLogin.textContent = i18n.get('eolmaLogin');
   }
 }
 
 // 초기화
 async function init() {
-  // eolma 링크 설정
+  // i18n 텍스트 설정
+  document.getElementById('headerTitle').textContent = i18n.get('headerTitle');
+  document.getElementById('downloadRangeLabel').textContent = i18n.get('downloadRange');
+  document.getElementById('yearLabel').textContent = i18n.get('year');
+  document.getElementById('monthLabel').textContent = i18n.get('month');
+  document.getElementById('startLabel').textContent = i18n.get('start');
+  document.getElementById('endLabel').textContent = i18n.get('end');
+  btnExcel.textContent = i18n.get('downloadExcel');
+  btnCsv.textContent = i18n.get('downloadCsv');
+  document.getElementById('allPeriodLabel').textContent = i18n.get('allPeriod');
+  btnAllExcel.textContent = i18n.get('allExcel');
+  btnAllCsv.textContent = i18n.get('allCsv');
+  eolmaLinkEl.textContent = i18n.get('visitEolma');
   eolmaLinkEl.href = 'https://eolma.de';
+
+  // rangeType 옵션 설정
+  rangeTypeEl.options[0].textContent = i18n.get('selectMonth');
+  rangeTypeEl.options[1].textContent = i18n.get('selectRange');
+  rangeTypeEl.options[2].textContent = i18n.get('selectAll');
 
   // eolma 로그인 상태 확인
   const authResult = await eolmaApi.checkAuth();
@@ -84,7 +113,7 @@ async function init() {
     activePlatform = detectPlatform(tab.url || '');
 
     if (!activePlatform) {
-      showError('네이버페이 또는 쿠팡 주문내역 페이지에서 실행해주세요.');
+      showError(i18n.get('unsupportedPage'));
       return;
     }
 
@@ -93,7 +122,7 @@ async function init() {
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_PAGE' });
 
     if (!response || !response.success) {
-      showError(response?.error || '데이터를 가져올 수 없습니다. 페이지를 새로고침해주세요.');
+      showError(response?.error || i18n.get('dataFetchFailed'));
       return;
     }
 
@@ -101,17 +130,17 @@ async function init() {
     initDateSelectors();
 
     if (activePlatform === 'coupang') {
-      const more = response.hasNext ? ' (다음 페이지 있음)' : '';
-      statusEl.textContent = `현재 페이지 ${response.itemCount}건${more}`;
+      const more = response.hasNext ? ` ${i18n.get('nextPageAvailable')}` : '';
+      statusEl.textContent = i18n.get('currentPageInfo', [response.itemCount]) + more;
     } else {
-      statusEl.textContent = `총 ${response.totalPage}페이지 (약 ${response.totalPage * response.itemCount}건)`;
+      statusEl.textContent = i18n.get('totalPageInfo', [response.totalPage, response.totalPage * response.itemCount]);
     }
     controlsEl.style.display = 'block';
   } catch (e) {
     if (e?.message?.includes('Could not establish connection') || e?.message?.includes('Receiving end does not exist')) {
-      showError('페이지를 새로고침한 뒤 익스텐션 아이콘을 다시 클릭해주세요.');
+      showError(i18n.get('refreshPage'));
     } else {
-      showError('데이터를 가져올 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.');
+      showError(i18n.get('dataFetchFailed'));
     }
   }
 }
@@ -163,15 +192,14 @@ rangeTypeEl.addEventListener('change', () => {
 // 진행 상황 리스너
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'FETCH_PROGRESS') {
-    const countText = message.itemCount ? ` (${message.itemCount}건 수집)` : '';
     if (message.total == null) {
       progressFill.classList.add('indeterminate');
-      progressText.textContent = `${message.current}페이지 검색 중...${countText}`;
+      progressText.textContent = i18n.get('searching', [message.current, message.itemCount || 0]);
     } else {
       progressFill.classList.remove('indeterminate');
       const pct = Math.round((message.current / message.total) * 100);
       progressFill.style.width = pct + '%';
-      progressText.textContent = `${message.current} / ${message.total} 페이지 검색 중...${countText}`;
+      progressText.textContent = i18n.get('searchingTotal', [message.current, message.total, message.itemCount || 0]);
     }
   }
 });
@@ -192,12 +220,12 @@ async function startExport(format, all = false) {
   progressEl.style.display = 'block';
   progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
-  progressText.textContent = '데이터 수집 시작...';
+  progressText.textContent = i18n.get('collecting');
 
   try {
     const items = await collectItems(all);
     if (!items || items.length === 0) {
-      showError('해당 기간에 결제내역이 없습니다.');
+      showError(i18n.get('noData'));
       return;
     }
 
@@ -207,7 +235,7 @@ async function startExport(format, all = false) {
       await downloadExcel(items);
     }
 
-    showStatus(`${items.length}건 다운로드 완료!`);
+    showStatus(i18n.get('downloadComplete', [items.length]));
   } catch (e) {
     showError(e.message);
   } finally {
@@ -247,7 +275,7 @@ async function collectItems(all = false) {
     });
 
     if (!response.success) {
-      throw new Error(response.error || '데이터 수집에 실패했습니다.');
+      throw new Error(response.error || i18n.get('collectFailed'));
     }
 
     progressFill.classList.remove('indeterminate');
@@ -266,7 +294,7 @@ async function collectItems(all = false) {
     if (response.partialItems && response.partialItems.length > 0) {
       return response.partialItems;
     }
-    throw new Error(response.error || '데이터 수집에 실패했습니다.');
+    throw new Error(response.error || i18n.get('collectFailed'));
   }
 
   progressFill.style.width = '100%';
@@ -288,18 +316,18 @@ async function startEolmaUpload() {
   progressEl.style.display = 'block';
   progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
-  progressText.textContent = '데이터 수집 중...';
+  progressText.textContent = i18n.get('collecting');
 
   try {
     const items = await collectItems();
     if (!items || items.length === 0) {
-      showError('해당 기간에 결제내역이 없습니다.');
+      showError(i18n.get('noData'));
       return;
     }
 
     progressFill.classList.remove('indeterminate');
     progressFill.style.width = '70%';
-    progressText.textContent = `${items.length}건 eolma로 전송 중...`;
+    progressText.textContent = i18n.get('uploading', [items.length]);
 
     const range = getSelectedRange();
     const period = range
@@ -309,9 +337,9 @@ async function startEolmaUpload() {
     const result = await eolmaApi.send({ platform: activePlatform, items, period });
 
     progressFill.style.width = '100%';
-    showStatus(`eolma 전송 완료! (${result.uploadedCount}건)`);
+    showStatus(i18n.get('uploadComplete', [result.uploadedCount]));
   } catch (e) {
-    showError('전송 실패: ' + e.message);
+    showError(i18n.get('uploadFailed') + e.message);
   } finally {
     progressFill.classList.remove('indeterminate');
     progressEl.style.display = 'none';
@@ -345,14 +373,14 @@ async function downloadCsv(items) {
 // Excel 다운로드
 async function downloadExcel(items) {
   if (typeof XLSX === 'undefined') {
-    showError('Excel 라이브러리를 로드할 수 없습니다. CSV로 다운로드합니다.');
+    showError(i18n.get('excelLoadError'));
     await downloadCsv(items);
     return;
   }
 
   const ws = XLSX.utils.json_to_sheet(items);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '결제내역');
+  XLSX.utils.book_append_sheet(wb, ws, i18n.get('paymentHistory'));
 
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -360,15 +388,15 @@ async function downloadExcel(items) {
 }
 
 function generateFilename(ext) {
-  const platform = activePlatform || 'eolma';
+  const platformName = activePlatform ? getPlatformLabel(activePlatform).toLowerCase() : 'eolma';
   const range = exportAll ? null : getSelectedRange();
   if (range) {
     if (range.startMonth === range.endMonth) {
-      return `${platform}_${range.startMonth}.${ext}`;
+      return `${platformName}_${range.startMonth}.${ext}`;
     }
-    return `${platform}_${range.startMonth}_${range.endMonth}.${ext}`;
+    return `${platformName}_${range.startMonth}_${range.endMonth}.${ext}`;
   }
-  return `${platform}_all.${ext}`;
+  return `${platformName}_all.${ext}`;
 }
 
 function downloadBlob(blob, filename) {

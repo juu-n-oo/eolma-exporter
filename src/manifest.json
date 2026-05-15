@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Eolma Exporter",
+  "name": "__MSG_appName__",
   "version": "0.1.0",
-  "description": "네이버페이/쿠팡 결제내역을 Excel/CSV로 내보내기",
+  "description": "__MSG_appDesc__",
+  "default_locale": "ko",
   "permissions": [
     "activeTab",
     "downloads",

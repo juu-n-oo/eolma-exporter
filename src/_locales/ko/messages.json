@@ -1,0 +1,228 @@
+{
+  "appName": {
+    "message": "Eolma Exporter",
+    "description": "확장 프로그램 이름"
+  },
+  "appDesc": {
+    "message": "네이버페이/쿠팡 결제내역을 Excel/CSV로 내보내기",
+    "description": "확장 프로그램 설명"
+  },
+  "headerTitle": {
+    "message": "eolma exporter",
+    "description": "팝업 헤더 제목"
+  },
+  "headerSubtitle": {
+    "message": "결제내역 내보내기",
+    "description": "팝업 헤더 부제목"
+  },
+  "loadingPage": {
+    "message": "페이지 정보를 확인하는 중...",
+    "description": "페이지 로딩 중"
+  },
+  "unsupportedPage": {
+    "message": "네이버페이 또는 쿠팡 주문내역 페이지에서 실행해주세요.",
+    "description": "지원하지 않는 페이지"
+  },
+  "refreshPage": {
+    "message": "페이지를 새로고침한 뒤 익스텐션 아이콘을 다시 클릭해주세요.",
+    "description": "페이지 새로고침 요청"
+  },
+  "dataFetchFailed": {
+    "message": "데이터를 가져올 수 없습니다. 페이지를 새로고침해주세요.",
+    "description": "데이터 수집 실패"
+  },
+  "downloadRange": {
+    "message": "다운로드 범위",
+    "description": "다운로드 범위 레이블"
+  },
+  "selectMonth": {
+    "message": "월 선택",
+    "description": "월 선택 옵션"
+  },
+  "selectRange": {
+    "message": "기간 선택",
+    "description": "기간 선택 옵션"
+  },
+  "selectAll": {
+    "message": "전체",
+    "description": "전체 선택 옵션"
+  },
+  "year": {
+    "message": "년도",
+    "description": "년도 레이블"
+  },
+  "month": {
+    "message": "월",
+    "description": "월 레이블"
+  },
+  "start": {
+    "message": "시작",
+    "description": "시작 날짜 레이블"
+  },
+  "end": {
+    "message": "끝",
+    "description": "끝 날짜 레이블"
+  },
+  "downloadExcel": {
+    "message": "Excel 다운로드",
+    "description": "Excel 다운로드 버튼"
+  },
+  "downloadCsv": {
+    "message": "CSV 다운로드",
+    "description": "CSV 다운로드 버튼"
+  },
+  "allPeriod": {
+    "message": "전체 기간",
+    "description": "전체 기간 레이블"
+  },
+  "allExcel": {
+    "message": "전체 Excel",
+    "description": "전체 Excel 다운로드 버튼"
+  },
+  "allCsv": {
+    "message": "전체 CSV",
+    "description": "전체 CSV 다운로드 버튼"
+  },
+  "eolmaLoggedOut": {
+    "message": "eolma 미로그인",
+    "description": "eolma 미로그인 상태"
+  },
+  "eolmaLoggedIn": {
+    "message": "로그인됨",
+    "description": "eolma 로그인 상태"
+  },
+  "eolmaLogin": {
+    "message": "eolma 로그인",
+    "description": "eolma 로그인 버튼"
+  },
+  "eolmaUpload": {
+    "message": "eolma로 전송",
+    "description": "eolma로 전송 버튼"
+  },
+  "visitEolma": {
+    "message": "eolma 가계부 방문 →",
+    "description": "eolma 가계부 방문 링크"
+  },
+  "currentPageInfo": {
+    "message": "현재 페이지 $COUNT$건",
+    "description": "현재 페이지 아이템 수",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "15"
+      }
+    }
+  },
+  "nextPageAvailable": {
+    "message": "(다음 페이지 있음)",
+    "description": "다음 페이지 있음 표시"
+  },
+  "totalPageInfo": {
+    "message": "총 $TOTAL$페이지 (약 $COUNT$건)",
+    "description": "전체 페이지 및 아이템 수",
+    "placeholders": {
+      "total": {
+        "content": "$1",
+        "example": "10"
+      },
+      "count": {
+        "content": "$2",
+        "example": "150"
+      }
+    }
+  },
+  "collecting": {
+    "message": "데이터 수집 시작...",
+    "description": "데이터 수집 시작 메시지"
+  },
+  "noData": {
+    "message": "해당 기간에 결제내역이 없습니다.",
+    "description": "데이터 없음 메시지"
+  },
+  "downloadComplete": {
+    "message": "$COUNT$건 다운로드 완료!",
+    "description": "다운로드 완료 메시지",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "collectFailed": {
+    "message": "데이터 수집에 실패했습니다.",
+    "description": "데이터 수집 실패"
+  },
+  "searching": {
+    "message": "$CURRENT$페이지 검색 중... ($ITEMS$건 수집)",
+    "description": "검색 중 메시지",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "5"
+      },
+      "items": {
+        "content": "$2",
+        "example": "75"
+      }
+    }
+  },
+  "searchingTotal": {
+    "message": "$CURRENT$ / $TOTAL$ 페이지 검색 중... ($ITEMS$건 수집)",
+    "description": "전체 페이지 검색 중",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "5"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      },
+      "items": {
+        "content": "$3",
+        "example": "75"
+      }
+    }
+  },
+  "uploading": {
+    "message": "$COUNT$건 eolma로 전송 중...",
+    "description": "업로드 중 메시지",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "uploadComplete": {
+    "message": "eolma 전송 완료! ($COUNT$건)",
+    "description": "업로드 완료 메시지",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "50"
+      }
+    }
+  },
+  "uploadFailed": {
+    "message": "전송 실패: ",
+    "description": "업로드 실패 메시지 앞부분"
+  },
+  "excelLoadError": {
+    "message": "Excel 라이브러리를 로드할 수 없습니다. CSV로 다운로드합니다.",
+    "description": "Excel 라이브러리 로드 실패"
+  },
+  "paymentHistory": {
+    "message": "결제내역",
+    "description": "Excel 시트 이름"
+  },
+  "naverpay": {
+    "message": "네이버페이",
+    "description": "네이버페이 플랫폼명"
+  },
+  "coupang": {
+    "message": "쿠팡",
+    "description": "쿠팡 플랫폼명"
+  }
+}
