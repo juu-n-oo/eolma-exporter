@@ -5,46 +5,6 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    .btn-eolma {
-      background: #5856D6;
-      color: #fff;
-    }
-    .btn-eolma:hover { background: #4a48c4; }
-    .btn-eolma:active { background: #3d3bb0; }
-    .btn-eolma:disabled {
-      background: #AEAEB2;
-      cursor: not-allowed;
-    }
-
-    .eolma-auth {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .eolma-auth-left {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .dot-off { background: #AEAEB2; }
-    .dot-on  { background: #34C759; }
-    .eolma-auth-label {
-      font-size: 13px;
-      color: #86868B;
-    }
-    .eolma-auth-user {
-      font-size: 12px;
-      font-weight: 600;
-      color: #1D1D1F;
-    }
-
     body {
       width: 340px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -64,16 +24,10 @@
     .logo {
       width: 32px;
       height: 32px;
-      background: #007AFF;
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
       flex-shrink: 0;
+      object-fit: cover;
+      display: block;
     }
     .header-text { flex: 1; }
     .header-title {
@@ -256,7 +210,8 @@
 <body>
 
   <div class="header">
-    <div class="logo">e</div>
+    <img class="logo" src="icons/icon48.png" alt="eolma exporter">
+
     <div class="header-text">
       <div id="headerTitle" class="header-title">eolma exporter</div>
       <div id="headerSubtitle" class="header-subtitle">결제내역 내보내기</div>
@@ -326,25 +281,12 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="eolma-auth">
-        <div class="eolma-auth-left">
-          <div id="eolmaStatusDot" class="status-dot dot-off"></div>
-          <span id="eolmaStatusText" class="eolma-auth-label"></span>
-        </div>
-        <span id="eolmaUserName" class="eolma-auth-user"></span>
-      </div>
-      <button id="btnEolmaLogin" class="btn btn-eolma"></button>
-      <button id="btnEolmaUpload" class="btn btn-eolma" style="display:none;"></button>
-    </div>
-
     <div class="footer">
       <a id="eolmaLink" class="footer-link" target="_blank"></a>
     </div>
   </div>
 
   <script src="lib/xlsx.min.js"></script>
-  <script src="eolma/api.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

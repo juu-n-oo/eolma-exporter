@@ -1,6 +1,6 @@
 # eolma-exporter
 
-네이버페이 + 쿠팡 결제/주문내역을 Excel/CSV로 내보내고, eolma 서비스로 전송하는 Chrome Extension.
+네이버페이 + 쿠팡 결제/주문내역을 Excel/CSV로 내보내는 Chrome Extension.
 
 ## 개요
 
@@ -18,7 +18,6 @@
 - **플랫폼별 자동 활성화**: 네이버페이 또는 쿠팡 결제내역 페이지 접속 시 익스텐션 자동 활성화
 - **월별/기간별 수집**: 특정 월 또는 시작~종료 기간을 지정하여 거래내역 수집
 - **Excel/CSV 다운로드**: 수집한 데이터를 Excel(xlsx) 또는 CSV 형식으로 로컬 다운로드
-- **eolma 서비스 연동**: 수집한 데이터를 eolma 가계부 서비스로 HTTP POST 전송 (현재 mock)
 
 ## 설치 및 사용
 

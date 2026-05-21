@@ -6,13 +6,11 @@
   "default_locale": "ko",
   "permissions": [
     "activeTab",
-    "downloads",
-    "storage"
+    "downloads"
   ],
   "host_permissions": [
     "https://pay.naver.com/*",
-    "https://mc.coupang.com/*",
-    "http://localhost:3000/*"
+    "https://mc.coupang.com/*"
   ],
   "background": {
     "service_worker": "background.js"

@@ -20,11 +20,6 @@ const btnCsv = document.getElementById('btnCsv');
 const btnExcel = document.getElementById('btnExcel');
 const btnAllExcel = document.getElementById('btnAllExcel');
 const btnAllCsv = document.getElementById('btnAllCsv');
-const btnEolmaLogin = document.getElementById('btnEolmaLogin');
-const btnEolmaUpload = document.getElementById('btnEolmaUpload');
-const eolmaStatusDot = document.getElementById('eolmaStatusDot');
-const eolmaStatusText = document.getElementById('eolmaStatusText');
-const eolmaUserName = document.getElementById('eolmaUserName');
 const progressEl = document.getElementById('progress');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
@@ -63,24 +58,6 @@ function showPlatformBadge(platform) {
   }
 }
 
-function renderEolmaAuth(authResult) {
-  if (authResult.loggedIn) {
-    eolmaStatusDot.className = 'status-dot dot-on';
-    eolmaStatusText.textContent = i18n.get('eolmaLoggedIn');
-    eolmaUserName.textContent = authResult.user?.name || '';
-    btnEolmaLogin.style.display = 'none';
-    btnEolmaUpload.style.display = 'block';
-    btnEolmaUpload.textContent = i18n.get('eolmaUpload');
-  } else {
-    eolmaStatusDot.className = 'status-dot dot-off';
-    eolmaStatusText.textContent = i18n.get('eolmaLoggedOut');
-    eolmaUserName.textContent = '';
-    btnEolmaLogin.style.display = 'block';
-    btnEolmaUpload.style.display = 'none';
-    btnEolmaLogin.textContent = i18n.get('eolmaLogin');
-  }
-}
-
 // 초기화
 async function init() {
   // i18n 텍스트 설정
@@ -102,10 +79,6 @@ async function init() {
   rangeTypeEl.options[0].textContent = i18n.get('selectMonth');
   rangeTypeEl.options[1].textContent = i18n.get('selectRange');
   rangeTypeEl.options[2].textContent = i18n.get('selectAll');
-
-  // eolma 로그인 상태 확인
-  const authResult = await eolmaApi.checkAuth();
-  renderEolmaAuth(authResult);
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -210,10 +183,6 @@ btnExcel.addEventListener('click', () => startExport('excel'));
 btnAllExcel.addEventListener('click', () => startExport('excel', true));
 btnAllCsv.addEventListener('click', () => startExport('csv', true));
 
-// eolma 버튼
-btnEolmaLogin.addEventListener('click', () => eolmaApi.openLoginPage());
-btnEolmaUpload.addEventListener('click', startEolmaUpload);
-
 async function startExport(format, all = false) {
   exportAll = all;
   setButtonsDisabled(true);
@@ -307,44 +276,6 @@ function setButtonsDisabled(disabled) {
   btnExcel.disabled = disabled;
   btnAllExcel.disabled = disabled;
   btnAllCsv.disabled = disabled;
-  btnEolmaUpload.disabled = disabled;
-}
-
-async function startEolmaUpload() {
-  exportAll = false;
-  setButtonsDisabled(true);
-  progressEl.style.display = 'block';
-  progressFill.classList.remove('indeterminate');
-  progressFill.style.width = '0%';
-  progressText.textContent = i18n.get('collecting');
-
-  try {
-    const items = await collectItems();
-    if (!items || items.length === 0) {
-      showError(i18n.get('noData'));
-      return;
-    }
-
-    progressFill.classList.remove('indeterminate');
-    progressFill.style.width = '70%';
-    progressText.textContent = i18n.get('uploading', [items.length]);
-
-    const range = getSelectedRange();
-    const period = range
-      ? { start: range.startMonth + '-01', end: range.endMonth + '-31' }
-      : null;
-
-    const result = await eolmaApi.send({ platform: activePlatform, items, period });
-
-    progressFill.style.width = '100%';
-    showStatus(i18n.get('uploadComplete', [result.uploadedCount]));
-  } catch (e) {
-    showError(i18n.get('uploadFailed') + e.message);
-  } finally {
-    progressFill.classList.remove('indeterminate');
-    progressEl.style.display = 'none';
-    setButtonsDisabled(false);
-  }
 }
 
 // CSV 다운로드
@@ -400,12 +331,15 @@ function generateFilename(ext) {
 }
 
 function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  chrome.downloads.download({
-    url,
-    filename,
-    saveAs: true
-  });
+  const reader = new FileReader();
+  reader.onload = () => {
+    chrome.downloads.download({
+      url: reader.result,
+      filename,
+      saveAs: true
+    });
+  };
+  reader.readAsDataURL(blob);
 }
 
 init();
