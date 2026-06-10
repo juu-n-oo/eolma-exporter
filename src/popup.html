@@ -205,6 +205,132 @@
     .footer-link:hover {
       color: #0055b3;
     }
+
+    /* eolma 로그인 상태 카드 */
+    .eolma-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .eolma-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #AEAEB2;
+      flex-shrink: 0;
+    }
+    .eolma-dot.on { background: #34C759; }
+    .eolma-status-text {
+      font-size: 13px;
+      color: #1D1D1F;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .eolma-action {
+      flex-shrink: 0;
+      font-size: 12px;
+    }
+
+    /* 상태 표시 — 회로 불빛(LED) 스타일 pill */
+    .status-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #E5E5EA;
+      color: #86868B;
+      max-width: 140px;
+    }
+    .pill > span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #AEAEB2;
+      flex-shrink: 0;
+    }
+    /* 켜짐(녹색) — 은은한 발광 */
+    .pill.on {
+      background: #E7FAEC;
+      color: #1a8f3c;
+    }
+    .pill.on .pill-dot {
+      background: #34C759;
+      box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.18), 0 0 6px rgba(52, 199, 89, 0.85);
+    }
+    /* 오프라인(빨강) */
+    .pill.off {
+      background: #FDECEA;
+      color: #d3321f;
+    }
+    .pill.off .pill-dot {
+      background: #FF3B30;
+      box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.16), 0 0 6px rgba(255, 59, 48, 0.7);
+    }
+
+    /* 미지원 페이지 안내 */
+    .empty-msg {
+      font-size: 13px;
+      color: #86868B;
+      text-align: center;
+      line-height: 1.5;
+      padding: 4px 0 2px;
+    }
+    .btn-naver { background: #03C75A; color: #fff; }
+    .btn-naver:hover { background: #02b350; }
+    .btn-coupang { background: #E6450A; color: #fff; }
+    .btn-coupang:hover { background: #cf3e09; }
+
+    /* 전체 기간 다운로드 드롭다운 */
+    .dropdown { position: relative; }
+    .dropdown-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .caret { display: inline-flex; transition: transform 150ms ease; }
+    .dropdown.open .caret { transform: rotate(180deg); }
+    .dropdown-menu {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: #FFFFFF;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+      padding: 4px;
+      z-index: 10;
+    }
+    .dropdown-item {
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #1D1D1F;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown-item:hover { background: #F5F5F7; }
+    .dropdown-item:disabled { color: #AEAEB2; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -219,10 +345,7 @@
     <span id="platformBadge" class="platform-badge"></span>
   </div>
 
-  <div class="card">
-    <div id="status" class="status">페이지 정보를 확인하는 중...</div>
-  </div>
-
+  <!-- 다운로드 범위 + 다운로드 (지원 페이지) — 최상단 -->
   <div id="controls" style="display:none;">
     <div class="card">
       <div class="field">
@@ -236,15 +359,9 @@
 
       <div id="monthSelect">
         <div class="divider"></div>
-        <div class="row">
-          <div class="field">
-            <div id="yearLabel" class="field-label">년도</div>
-            <select id="year"></select>
-          </div>
-          <div class="field">
-            <div id="monthLabel" class="field-label">월</div>
-            <select id="month"></select>
-          </div>
+        <div class="field">
+          <div id="monthLabel" class="field-label">년월</div>
+          <input type="month" id="month">
         </div>
       </div>
 
@@ -267,11 +384,25 @@
 
       <div class="divider"></div>
 
-      <div id="allPeriodLabel" class="field-label" style="margin-bottom: 6px;">전체 기간</div>
-      <div class="row">
-        <button id="btnAllExcel" class="btn btn-secondary" style="font-size: 13px;"></button>
-        <button id="btnAllCsv" class="btn btn-secondary" style="font-size: 13px;"></button>
+      <!-- 전체 기간: 단일 드롭다운으로 통합 (Excel / CSV 선택) -->
+      <div id="allDropdown" class="dropdown">
+        <button id="btnAll" class="btn btn-secondary dropdown-toggle">
+          <span id="allPeriodLabel">전체 기간</span>
+          <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div id="allMenu" class="dropdown-menu" style="display:none;">
+          <button id="btnAllExcel" class="dropdown-item"></button>
+          <button id="btnAllCsv" class="dropdown-item"></button>
+        </div>
       </div>
+
+      <div class="divider"></div>
+
+      <!-- eolma 업로드 (로그인 + 서버 가용 시 활성) -->
+      <button id="btnUpload" class="btn btn-primary"></button>
+      <div id="uploadHint" class="empty-msg" style="display:none; margin-top: 6px;"></div>
 
       <div id="progress" class="progress">
         <div class="progress-track">
@@ -280,13 +411,39 @@
         <div id="progressText" class="progress-label"></div>
       </div>
     </div>
+  </div>
 
-    <div class="footer">
-      <a id="eolmaLink" class="footer-link" target="_blank"></a>
+  <!-- 페이지 정보 (아이템 갯수) -->
+  <div id="statusCard" class="card">
+    <div id="status" class="status">페이지 정보를 확인하는 중...</div>
+  </div>
+
+  <!-- 네이버페이/쿠팡 주문내역 페이지가 아닐 때 -->
+  <div id="unsupported" style="display:none;">
+    <div class="card">
+      <div id="unsupportedMsg" class="empty-msg"></div>
+    </div>
+    <div class="card">
+      <button id="btnGoNaver" class="btn btn-naver"></button>
+      <button id="btnGoCoupang" class="btn btn-coupang"></button>
     </div>
   </div>
 
+  <!-- eolma 서버/로그인 상태 (항상 표시, 하단) — LED pill -->
+  <div class="card status-pills" style="margin-top: 2px;">
+    <span id="serverPill" class="pill">
+      <span class="pill-dot"></span>
+      <span id="serverPillText">...</span>
+    </span>
+    <span id="eolmaPill" class="pill">
+      <span class="pill-dot"></span>
+      <span id="eolmaPillText">...</span>
+    </span>
+    <a id="eolmaAction" class="footer-link eolma-action" target="_blank" style="display:none; margin-left:auto;"></a>
+  </div>
+
   <script src="lib/xlsx.min.js"></script>
+  <script src="eolma/api.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,16 +1,18 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "__MSG_appDesc__",
   "default_locale": "ko",
   "permissions": [
     "activeTab",
-    "downloads"
+    "downloads",
+    "storage"
   ],
   "host_permissions": [
     "https://pay.naver.com/*",
-    "https://mc.coupang.com/*"
+    "https://mc.coupang.com/*",
+    "https://eolma.de/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -24,6 +26,11 @@
     {
       "matches": ["https://mc.coupang.com/ssr/desktop/order/list*"],
       "js": ["content/coupang.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://eolma.de/*"],
+      "js": ["content/eolma.js"],
       "run_at": "document_idle"
     }
   ],

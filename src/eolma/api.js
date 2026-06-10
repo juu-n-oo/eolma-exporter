@@ -1,33 +1,36 @@
-// eolma 서비스 API 클라이언트 (mock)
-// TODO: 백엔드 완성 후 주석 처리된 fetch 블록을 활성화하고 mock 코드 제거
+// eolma 서비스 API 클라이언트
 
-const EOLMA_BASE_URL = 'http://localhost:3000'; // TODO: 프로덕션 URL로 교체
+const EOLMA_BASE_URL = 'https://eolma.de';
 
 const eolmaApi = {
   /**
-   * 현재 브라우저 세션(쿠키)으로 로그인 여부를 확인한다.
+   * eolma 로그인 여부를 확인한다.
+   *
+   * eolma SPA 는 JWT 를 localStorage 에 저장하고 Authorization: Bearer 로 전송한다(쿠키 미사용).
+   * content/eolma.js 가 eolma.de 방문 시 토큰을 chrome.storage.local 로 동기화해 두므로,
+   * 그 토큰으로 who-am-i 를 호출한다. (MV3 host_permission 덕에 CORS 우회)
+   *
    * @returns {Promise<{ loggedIn: boolean, user?: { name: string } }>}
    */
   async checkAuth() {
-    // 실제 구현:
-    // try {
-    //   const resp = await fetch(`${EOLMA_BASE_URL}/api/auth/me`, { credentials: 'include' });
-    //   if (!resp.ok) return { loggedIn: false };
-    //   const user = await resp.json();
-    //   return { loggedIn: true, user };
-    // } catch {
-    //   return { loggedIn: false };
-    // }
+    const { eolmaAccessToken } = await chrome.storage.local.get('eolmaAccessToken');
+    if (!eolmaAccessToken) return { loggedIn: false };
 
-    // Mock: chrome.storage.local 플래그로 로그인 상태 시뮬레이션
-    const { eolmaMockLoggedIn, eolmaMockUser } = await chrome.storage.local.get([
-      'eolmaMockLoggedIn',
-      'eolmaMockUser'
-    ]);
-    if (eolmaMockLoggedIn) {
-      return { loggedIn: true, user: eolmaMockUser || { name: '테스트 사용자' } };
+    try {
+      const resp = await fetch(`${EOLMA_BASE_URL}/api/auth/who-am-i`, {
+        headers: { Authorization: `Bearer ${eolmaAccessToken}` }
+      });
+      if (!resp.ok) {
+        // 토큰 만료/무효 — 캐시 정리 후 미로그인 처리
+        if (resp.status === 401) chrome.storage.local.remove('eolmaAccessToken');
+        return { loggedIn: false };
+      }
+      const body = await resp.json();
+      const user = body?.data ?? body; // { code, message, data } 래퍼 해제
+      return { loggedIn: true, user: { name: user?.nickname || user?.email || 'eolma' } };
+    } catch {
+      return { loggedIn: false };
     }
-    return { loggedIn: false };
   },
 
   /**
@@ -38,59 +41,97 @@ const eolmaApi = {
   },
 
   /**
-   * 거래내역을 eolma 서비스로 전송한다. (쿠키 세션 인증)
-   * @param {object} options
-   * @param {string} options.platform - 'naverpay' | 'coupang'
-   * @param {Array}  options.items    - 포맷된 거래내역 배열
-   * @param {object|null} options.period - { start, end } | null
-   * @returns {Promise<{ success: boolean, uploadedCount?: number, message?: string }>}
+   * eolma 홈을 새 탭에서 연다.
    */
-  async send({ platform, items, period }) {
-    const payload = {
-      platform,
-      period: period || null,
-      items: items.map(item => eolmaApi._toTransaction(item, platform))
-    };
-
-    console.log('[eolma] POST /api/transactions', JSON.stringify(payload, null, 2));
-
-    // 실제 구현:
-    // const resp = await fetch(`${EOLMA_BASE_URL}/api/transactions`, {
-    //   method: 'POST',
-    //   credentials: 'include',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(payload)
-    // });
-    // if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    // return await resp.json();
-
-    // Mock
-    await new Promise(r => setTimeout(r, 800));
-    return { success: true, uploadedCount: items.length };
+  openHome() {
+    chrome.tabs.create({ url: EOLMA_BASE_URL });
   },
 
-  _toTransaction(item, platform) {
+  /**
+   * 백엔드 서버 가용 여부를 확인한다. (public /api/health)
+   * @returns {Promise<boolean>}
+   */
+  async checkHealth() {
+    try {
+      const resp = await fetch(`${EOLMA_BASE_URL}/api/health`, { method: 'GET' });
+      return resp.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * 수집한 거래내역을 eolma 의 staging 으로 다건 업로드한다.
+   * content/eolma.js 가 동기화한 access token 으로 Bearer 인증한다.
+   *
+   * 실패 시 status 프로퍼티를 가진 Error 를 throw 한다:
+   *   401(미인증/만료) · 403(권한없음) · 5xx(서버오류) · 0(네트워크) · 422(보낼 항목 없음)
+   *
+   * @param {object} options
+   * @param {string} options.platform - 'naverpay' | 'coupang'
+   * @param {Array}  options.items    - content script 가 포맷한 거래내역 배열
+   * @returns {Promise<{ success: boolean, uploadedCount: number }>}
+   */
+  async send({ platform, items }) {
+    const { eolmaAccessToken } = await chrome.storage.local.get('eolmaAccessToken');
+    if (!eolmaAccessToken) {
+      throw eolmaApi._err('NO_AUTH', 401);
+    }
+
+    // staging 적재 형식으로 변환 — amount>0, 유효한 날짜만 전송
+    const payload = items
+      .map(item => eolmaApi._toStaging(item, platform))
+      .filter(s => s.amount > 0 && /^\d{4}-\d{2}-\d{2}$/.test(s.transactedAt));
+
+    if (payload.length === 0) {
+      throw eolmaApi._err('NO_ITEMS', 422);
+    }
+
+    let resp;
+    try {
+      resp = await fetch(`${EOLMA_BASE_URL}/api/staging/transactions/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${eolmaAccessToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      throw eolmaApi._err('NETWORK', 0);
+    }
+
+    if (resp.status === 401) {
+      chrome.storage.local.remove('eolmaAccessToken');
+      throw eolmaApi._err('UNAUTHORIZED', 401);
+    }
+    if (!resp.ok) {
+      throw eolmaApi._err(`HTTP ${resp.status}`, resp.status);
+    }
+
+    const body = await resp.json().catch(() => ({}));
+    const data = body?.data ?? body;
+    return { success: true, uploadedCount: Array.isArray(data) ? data.length : payload.length };
+  },
+
+  _err(message, status) {
+    const e = new Error(message);
+    e.status = status;
+    return e;
+  },
+
+  _toStaging(item, platform) {
     if (platform === 'naverpay') {
       return {
-        transactionId: item.결제ID,
-        date: item.결제일시,
-        merchantName: item.가맹점명,
-        productName: item.상품명,
-        amount: item.결제금액,
-        status: item.결제상태,
-        platform,
-        raw: item
+        amount: Number(item.결제금액) || 0,
+        description: [item.가맹점명, item.상품명].filter(Boolean).join(' · '),
+        transactedAt: String(item.결제일시 || '').slice(0, 10)
       };
     }
     return {
-      transactionId: item.주문ID,
-      date: item.주문일시,
-      merchantName: item.판매자,
-      productName: item.상품명,
-      amount: item.주문금액,
-      status: item.주문상태,
-      platform,
-      raw: item
+      amount: Number(item.주문금액) || 0,
+      description: [item.판매자, item.상품명].filter(Boolean).join(' · '),
+      transactedAt: String(item.주문일시 || '').slice(0, 10)
     };
   }
 };

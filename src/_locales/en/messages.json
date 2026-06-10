@@ -20,8 +20,78 @@
     "description": "Loading page info"
   },
   "unsupportedPage": {
-    "message": "Please use this extension on a Naver Pay or Coupang order history page.",
+    "message": "This extension activates on a Naver Pay or Coupang order history page.",
     "description": "Unsupported page message"
+  },
+  "goNaverpay": {
+    "message": "Open Naver Pay history",
+    "description": "Go to Naver Pay button"
+  },
+  "goCoupang": {
+    "message": "Open Coupang orders",
+    "description": "Go to Coupang button"
+  },
+  "eolmaChecking": {
+    "message": "Checking eolma login...",
+    "description": "Checking eolma login"
+  },
+  "eolmaLoggedInAs": {
+    "message": "Logged in as $NAME$",
+    "description": "eolma logged in (user name)",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Junwoo"
+      }
+    }
+  },
+  "eolmaUnknown": {
+    "message": "Login status unavailable",
+    "description": "Login status unknown (server down)"
+  },
+  "serverChecking": {
+    "message": "Checking server status...",
+    "description": "Checking server status"
+  },
+  "serverUp": {
+    "message": "Online",
+    "description": "Backend online"
+  },
+  "serverDown": {
+    "message": "Offline",
+    "description": "Backend offline"
+  },
+  "yearMonth": {
+    "message": "Month",
+    "description": "Year-month label"
+  },
+  "uploadNeedServer": {
+    "message": "Available once the server is reachable.",
+    "description": "Upload disabled hint (server)"
+  },
+  "uploadNeedLogin": {
+    "message": "Log in to eolma to send.",
+    "description": "Upload disabled hint (login)"
+  },
+  "uploadAuthError": {
+    "message": "Please log in to eolma again. You can still download as Excel/CSV.",
+    "description": "Upload 401"
+  },
+  "uploadForbidden": {
+    "message": "You don't have permission to send.",
+    "description": "Upload 403"
+  },
+  "uploadNetworkError": {
+    "message": "Could not connect to the eolma server.",
+    "description": "Upload network error"
+  },
+  "uploadServerError": {
+    "message": "Upload failed due to a server error. Try again later or download as Excel/CSV.",
+    "description": "Upload 5xx"
+  },
+  "uploadNoValid": {
+    "message": "No valid items to send.",
+    "description": "No valid items to upload"
   },
   "refreshPage": {
     "message": "Please refresh the page and click the extension icon again.",
@@ -84,7 +154,7 @@
     "description": "All CSV download button"
   },
   "eolmaLoggedOut": {
-    "message": "Eolma Not Logged In",
+    "message": "Logged out",
     "description": "Eolma logged out state"
   },
   "eolmaLoggedIn": {

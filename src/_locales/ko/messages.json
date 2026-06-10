@@ -20,8 +20,78 @@
     "description": "페이지 로딩 중"
   },
   "unsupportedPage": {
-    "message": "네이버페이 또는 쿠팡 주문내역 페이지에서 실행해주세요.",
+    "message": "네이버페이나 쿠팡 구매내역 페이지에서 활성화됩니다.",
     "description": "지원하지 않는 페이지"
+  },
+  "goNaverpay": {
+    "message": "네이버페이 주문내역 열기",
+    "description": "네이버페이로 이동 버튼"
+  },
+  "goCoupang": {
+    "message": "쿠팡 주문내역 열기",
+    "description": "쿠팡으로 이동 버튼"
+  },
+  "eolmaChecking": {
+    "message": "eolma 로그인 확인 중...",
+    "description": "eolma 로그인 확인 중"
+  },
+  "eolmaLoggedInAs": {
+    "message": "$NAME$님으로 로그인됨",
+    "description": "eolma 로그인됨(사용자명)",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "준우"
+      }
+    }
+  },
+  "eolmaUnknown": {
+    "message": "로그인 상태 확인 불가",
+    "description": "서버 미가용으로 로그인 확인 불가"
+  },
+  "serverChecking": {
+    "message": "서버 상태 확인 중...",
+    "description": "서버 상태 확인 중"
+  },
+  "serverUp": {
+    "message": "Online",
+    "description": "서버 가용(백엔드 온라인)"
+  },
+  "serverDown": {
+    "message": "Offline",
+    "description": "서버 미가용(백엔드 오프라인)"
+  },
+  "yearMonth": {
+    "message": "년월",
+    "description": "년월 선택 레이블"
+  },
+  "uploadNeedServer": {
+    "message": "서버 연결 후 전송할 수 있습니다.",
+    "description": "업로드 비활성 힌트(서버)"
+  },
+  "uploadNeedLogin": {
+    "message": "eolma 로그인 후 전송할 수 있습니다.",
+    "description": "업로드 비활성 힌트(로그인)"
+  },
+  "uploadAuthError": {
+    "message": "eolma 재로그인이 필요합니다. 데이터는 Excel/CSV로 내려받을 수 있습니다.",
+    "description": "업로드 401"
+  },
+  "uploadForbidden": {
+    "message": "권한이 없어 전송할 수 없습니다.",
+    "description": "업로드 403"
+  },
+  "uploadNetworkError": {
+    "message": "eolma 서버에 연결할 수 없습니다.",
+    "description": "업로드 네트워크 오류"
+  },
+  "uploadServerError": {
+    "message": "서버 오류로 전송에 실패했습니다. 잠시 후 다시 시도하거나 Excel/CSV로 내려받으세요.",
+    "description": "업로드 5xx"
+  },
+  "uploadNoValid": {
+    "message": "전송할 수 있는 항목이 없습니다.",
+    "description": "업로드할 유효 항목 없음"
   },
   "refreshPage": {
     "message": "페이지를 새로고침한 뒤 익스텐션 아이콘을 다시 클릭해주세요.",
@@ -84,7 +154,7 @@
     "description": "전체 CSV 다운로드 버튼"
   },
   "eolmaLoggedOut": {
-    "message": "eolma 미로그인",
+    "message": "미로그인",
     "description": "eolma 미로그인 상태"
   },
   "eolmaLoggedIn": {

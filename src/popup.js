@@ -12,7 +12,6 @@ const controlsEl = document.getElementById('controls');
 const rangeTypeEl = document.getElementById('rangeType');
 const monthSelectEl = document.getElementById('monthSelect');
 const rangeSelectEl = document.getElementById('rangeSelect');
-const yearEl = document.getElementById('year');
 const monthEl = document.getElementById('month');
 const startMonthEl = document.getElementById('startMonth');
 const endMonthEl = document.getElementById('endMonth');
@@ -25,11 +24,34 @@ const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 const platformBadgeEl = document.getElementById('platformBadge');
 const headerSubtitleEl = document.getElementById('headerSubtitle');
-const eolmaLinkEl = document.getElementById('eolmaLink');
+const btnAll = document.getElementById('btnAll');
+const allMenuEl = document.getElementById('allMenu');
+const allDropdownEl = document.getElementById('allDropdown');
+const statusCardEl = document.getElementById('statusCard');
+const unsupportedEl = document.getElementById('unsupported');
+const unsupportedMsgEl = document.getElementById('unsupportedMsg');
+const btnGoNaver = document.getElementById('btnGoNaver');
+const btnGoCoupang = document.getElementById('btnGoCoupang');
+const eolmaActionEl = document.getElementById('eolmaAction');
+const serverPillEl = document.getElementById('serverPill');
+const serverPillTextEl = document.getElementById('serverPillText');
+const eolmaPillEl = document.getElementById('eolmaPill');
+const eolmaPillTextEl = document.getElementById('eolmaPillText');
+const btnUpload = document.getElementById('btnUpload');
+const uploadHintEl = document.getElementById('uploadHint');
+
+// 플랫폼별 주문내역 페이지 URL (detectPlatform / content_scripts 매칭과 일치)
+const PLATFORM_URLS = {
+  naverpay: 'https://pay.naver.com/pc/history',
+  coupang: 'https://mc.coupang.com/ssr/desktop/order/list'
+};
+const EOLMA_HOME = 'https://eolma.de';
 
 let currentPageData = null;
 let activePlatform = null;
 let exportAll = false;
+let serverUp = false;
+let eolmaLoggedIn = false;
 
 const getPlatformLabel = (platform) => {
   const labels = {
@@ -63,8 +85,7 @@ async function init() {
   // i18n 텍스트 설정
   document.getElementById('headerTitle').textContent = i18n.get('headerTitle');
   document.getElementById('downloadRangeLabel').textContent = i18n.get('downloadRange');
-  document.getElementById('yearLabel').textContent = i18n.get('year');
-  document.getElementById('monthLabel').textContent = i18n.get('month');
+  document.getElementById('monthLabel').textContent = i18n.get('yearMonth');
   document.getElementById('startLabel').textContent = i18n.get('start');
   document.getElementById('endLabel').textContent = i18n.get('end');
   btnExcel.textContent = i18n.get('downloadExcel');
@@ -72,13 +93,18 @@ async function init() {
   document.getElementById('allPeriodLabel').textContent = i18n.get('allPeriod');
   btnAllExcel.textContent = i18n.get('allExcel');
   btnAllCsv.textContent = i18n.get('allCsv');
-  eolmaLinkEl.textContent = i18n.get('visitEolma');
-  eolmaLinkEl.href = 'https://eolma.de';
+  btnGoNaver.textContent = i18n.get('goNaverpay');
+  btnGoCoupang.textContent = i18n.get('goCoupang');
+  btnUpload.textContent = i18n.get('eolmaUpload');
+  unsupportedMsgEl.textContent = i18n.get('unsupportedPage');
 
   // rangeType 옵션 설정
   rangeTypeEl.options[0].textContent = i18n.get('selectMonth');
   rangeTypeEl.options[1].textContent = i18n.get('selectRange');
   rangeTypeEl.options[2].textContent = i18n.get('selectAll');
+
+  // 서버 가용 여부 + eolma 로그인 상태 (페이지 종류와 무관하게 표시)
+  refreshEolmaState();
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -86,7 +112,7 @@ async function init() {
     activePlatform = detectPlatform(tab.url || '');
 
     if (!activePlatform) {
-      showError(i18n.get('unsupportedPage'));
+      showUnsupported();
       return;
     }
 
@@ -109,6 +135,7 @@ async function init() {
       statusEl.textContent = i18n.get('totalPageInfo', [response.totalPage, response.totalPage * response.itemCount]);
     }
     controlsEl.style.display = 'block';
+    updateUploadButton();
   } catch (e) {
     if (e?.message?.includes('Could not establish connection') || e?.message?.includes('Receiving end does not exist')) {
       showError(i18n.get('refreshPage'));
@@ -122,27 +149,13 @@ function initDateSelectors() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
-
-  for (let y = currentYear; y >= currentYear - 5; y--) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y + '년';
-    yearEl.appendChild(opt);
-  }
-
-  for (let m = 1; m <= 12; m++) {
-    const opt = document.createElement('option');
-    opt.value = String(m).padStart(2, '0');
-    opt.textContent = m + '월';
-    monthEl.appendChild(opt);
-  }
-
-  yearEl.value = currentYear;
-  monthEl.value = String(currentMonth).padStart(2, '0');
-
   const pad = (n) => String(n).padStart(2, '0');
-  endMonthEl.value = `${currentYear}-${pad(currentMonth)}`;
-  startMonthEl.value = `${currentYear}-${pad(currentMonth)}`;
+  const thisMonth = `${currentYear}-${pad(currentMonth)}`;
+
+  // 단일 년월 입력 (YYYY-MM)
+  monthEl.value = thisMonth;
+  endMonthEl.value = thisMonth;
+  startMonthEl.value = thisMonth;
 }
 
 function showError(msg) {
@@ -154,6 +167,97 @@ function showStatus(msg) {
   statusEl.textContent = msg;
   statusEl.classList.remove('error');
 }
+
+// 네이버페이/쿠팡 주문내역 페이지가 아닐 때의 안내 화면
+function showUnsupported() {
+  statusCardEl.style.display = 'none';
+  controlsEl.style.display = 'none';
+  unsupportedEl.style.display = 'block';
+}
+
+// eolma 로그인 상태를 확인해 LED pill 로 표시
+async function renderEolmaStatus() {
+  eolmaPillEl.classList.remove('on', 'off');
+  eolmaPillTextEl.textContent = i18n.get('eolmaChecking');
+  eolmaActionEl.style.display = 'none';
+
+  let result = { loggedIn: false };
+  try {
+    result = await eolmaApi.checkAuth();
+  } catch {
+    result = { loggedIn: false };
+  }
+
+  eolmaLoggedIn = !!result.loggedIn;
+  if (result.loggedIn) {
+    eolmaPillEl.classList.add('on');
+    eolmaPillTextEl.textContent = result.user?.name || i18n.get('eolmaLoggedIn');
+    eolmaActionEl.textContent = i18n.get('visitEolma');
+    eolmaActionEl.href = EOLMA_HOME;
+  } else {
+    eolmaPillEl.classList.remove('on', 'off');
+    eolmaPillTextEl.textContent = i18n.get('eolmaLoggedOut');
+    eolmaActionEl.textContent = i18n.get('eolmaLogin');
+    eolmaActionEl.href = `${EOLMA_HOME}/login`;
+  }
+  eolmaActionEl.style.display = 'inline';
+}
+
+// 서버 가용 여부(Online/Offline) → (가용 시) eolma 로그인 상태 순으로 갱신
+async function refreshEolmaState() {
+  serverPillEl.classList.remove('on', 'off');
+  serverPillTextEl.textContent = i18n.get('serverChecking');
+
+  serverUp = await eolmaApi.checkHealth();
+
+  if (serverUp) {
+    serverPillEl.classList.add('on');
+    serverPillTextEl.textContent = i18n.get('serverUp');
+    await renderEolmaStatus();
+  } else {
+    serverPillEl.classList.add('off');
+    serverPillTextEl.textContent = i18n.get('serverDown');
+    // 서버 미가용 시 로그인 확인 불가
+    eolmaLoggedIn = false;
+    eolmaPillEl.classList.remove('on', 'off');
+    eolmaPillTextEl.textContent = i18n.get('eolmaUnknown');
+    eolmaActionEl.style.display = 'none';
+  }
+  updateUploadButton();
+}
+
+// 업로드 버튼 활성/비활성 + 힌트
+function updateUploadButton() {
+  const canUpload = !!activePlatform && serverUp && eolmaLoggedIn;
+  btnUpload.disabled = !canUpload;
+
+  if (!activePlatform) {
+    uploadHintEl.style.display = 'none';
+  } else if (!serverUp) {
+    uploadHintEl.textContent = i18n.get('uploadNeedServer');
+    uploadHintEl.style.display = 'block';
+  } else if (!eolmaLoggedIn) {
+    uploadHintEl.textContent = i18n.get('uploadNeedLogin');
+    uploadHintEl.style.display = 'block';
+  } else {
+    uploadHintEl.style.display = 'none';
+  }
+}
+
+// 미지원 페이지 안내 — 네이버페이/쿠팡 주문내역으로 이동
+btnGoNaver.addEventListener('click', () => chrome.tabs.create({ url: PLATFORM_URLS.naverpay }));
+btnGoCoupang.addEventListener('click', () => chrome.tabs.create({ url: PLATFORM_URLS.coupang }));
+
+// 전체 기간 드롭다운 (Excel / CSV 통합)
+function setAllMenuOpen(open) {
+  allMenuEl.style.display = open ? 'block' : 'none';
+  allDropdownEl.classList.toggle('open', open);
+}
+btnAll.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setAllMenuOpen(allMenuEl.style.display !== 'block');
+});
+document.addEventListener('click', () => setAllMenuOpen(false));
 
 // 범위 타입 변경
 rangeTypeEl.addEventListener('change', () => {
@@ -182,6 +286,53 @@ btnCsv.addEventListener('click', () => startExport('csv'));
 btnExcel.addEventListener('click', () => startExport('excel'));
 btnAllExcel.addEventListener('click', () => startExport('excel', true));
 btnAllCsv.addEventListener('click', () => startExport('csv', true));
+
+// eolma 업로드 버튼
+btnUpload.addEventListener('click', startUpload);
+
+async function startUpload() {
+  setButtonsDisabled(true);
+  progressEl.style.display = 'block';
+  progressFill.classList.add('indeterminate');
+  progressText.textContent = i18n.get('collecting');
+
+  try {
+    const items = await collectItems(rangeTypeEl.value === 'all');
+    if (!items || items.length === 0) {
+      showError(i18n.get('noData'));
+      return;
+    }
+    progressFill.classList.add('indeterminate');
+    progressText.textContent = i18n.get('uploading', [items.length]);
+
+    const result = await eolmaApi.send({ platform: activePlatform, items });
+    showStatus(i18n.get('uploadComplete', [result.uploadedCount]));
+  } catch (e) {
+    handleUploadError(e);
+  } finally {
+    progressFill.classList.remove('indeterminate');
+    progressEl.style.display = 'none';
+    setButtonsDisabled(false);
+  }
+}
+
+// 업로드 실패 처리 — 401/403/5xx/네트워크 분기 (데이터는 Excel/CSV 폴백 가능)
+function handleUploadError(e) {
+  const status = e?.status;
+  if (status === 401) {
+    showError(i18n.get('uploadAuthError'));
+    refreshEolmaState();
+  } else if (status === 403) {
+    showError(i18n.get('uploadForbidden'));
+  } else if (status === 0) {
+    showError(i18n.get('uploadNetworkError'));
+    refreshEolmaState();
+  } else if (status === 422) {
+    showError(i18n.get('uploadNoValid'));
+  } else {
+    showError(i18n.get('uploadServerError'));
+  }
+}
 
 async function startExport(format, all = false) {
   exportAll = all;
@@ -218,7 +369,7 @@ function getSelectedRange() {
   const type = rangeTypeEl.value;
 
   if (type === 'month') {
-    const ym = `${yearEl.value}-${monthEl.value}`;
+    const ym = monthEl.value;
     return { startMonth: ym, endMonth: ym };
   }
 
@@ -274,8 +425,15 @@ async function collectItems(all = false) {
 function setButtonsDisabled(disabled) {
   btnCsv.disabled = disabled;
   btnExcel.disabled = disabled;
+  btnAll.disabled = disabled;
   btnAllExcel.disabled = disabled;
   btnAllCsv.disabled = disabled;
+  if (disabled) {
+    setAllMenuOpen(false);
+    btnUpload.disabled = true;
+  } else {
+    updateUploadButton();
+  }
 }
 
 // CSV 다운로드
