@@ -78,10 +78,11 @@ const eolmaApi = {
       throw eolmaApi._err('NO_AUTH', 401);
     }
 
-    // staging 적재 형식으로 변환 — amount>0, 유효한 날짜만 전송
+    // staging 적재 형식으로 변환 — 유효한 날짜만 전송.
+    // amount 0 은 기본적으로 제외하되, 취소/반품으로 memo 가 붙은 항목(0원 처리)은 통과시킨다.
     const payload = items
       .map(item => eolmaApi._toStaging(item, platform))
-      .filter(s => s.amount > 0 && /^\d{4}-\d{2}-\d{2}$/.test(s.transactedAt));
+      .filter(s => (s.amount > 0 || (s.amount === 0 && s.memo)) && /^\d{4}-\d{2}-\d{2}$/.test(s.transactedAt));
 
     if (payload.length === 0) {
       throw eolmaApi._err('NO_ITEMS', 422);
@@ -120,18 +121,36 @@ const eolmaApi = {
     return e;
   },
 
+  /**
+   * 수집 항목 1건을 staging bulk API 요청 형식으로 변환한다.
+   * - 필드: { amount, title, memo?, transactedAt } (구 'description' 키 대신 'title' 사용)
+   * - 쿠팡 주문상태 처리:
+   *   · '취소완료'/'반품완료' 포함 → amount 0 + 원금액을 memo 에 기록
+   *   · '반품신청' 포함 → 금액 유지 + memo 로 상태 표기
+   */
   _toStaging(item, platform) {
     if (platform === 'naverpay') {
       return {
         amount: Number(item.결제금액) || 0,
-        description: [item.가맹점명, item.상품명].filter(Boolean).join(' · '),
+        title: [item.가맹점명, item.상품명].filter(Boolean).join(' · '),
         transactedAt: String(item.결제일시 || '').slice(0, 10)
       };
     }
-    return {
-      amount: Number(item.주문금액) || 0,
-      description: [item.판매자, item.상품명].filter(Boolean).join(' · '),
+
+    const amount = Number(item.주문금액) || 0;
+    const staging = {
+      amount,
+      title: [item.판매자, item.상품명].filter(Boolean).join(' · '),
       transactedAt: String(item.주문일시 || '').slice(0, 10)
     };
+
+    const status = String(item.주문상태 || '');
+    if (status.includes('취소완료') || status.includes('반품완료')) {
+      staging.amount = 0;
+      staging.memo = `주문상태: ${status} · 원금액 ${amount.toLocaleString('ko-KR')}원`;
+    } else if (status.includes('반품신청')) {
+      staging.memo = '주문상태: 반품신청';
+    }
+    return staging;
   }
 };
