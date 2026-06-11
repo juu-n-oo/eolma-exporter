@@ -32,6 +32,8 @@ const unsupportedEl = document.getElementById('unsupported');
 const unsupportedMsgEl = document.getElementById('unsupportedMsg');
 const btnGoNaver = document.getElementById('btnGoNaver');
 const btnGoCoupang = document.getElementById('btnGoCoupang');
+const switchPlatformWrap = document.getElementById('switchPlatformWrap');
+const switchPlatformEl = document.getElementById('switchPlatform');
 const eolmaActionEl = document.getElementById('eolmaAction');
 const serverPillEl = document.getElementById('serverPill');
 const serverPillTextEl = document.getElementById('serverPillText');
@@ -80,6 +82,13 @@ function showPlatformBadge(platform) {
   }
 }
 
+// 지원 페이지에서 반대 플랫폼 주문내역으로 이동하는 링크를 구성한다.
+function setupSwitchLink(platform) {
+  const other = platform === 'naverpay' ? 'coupang' : 'naverpay';
+  switchPlatformEl.textContent = other === 'coupang' ? i18n.get('goCoupang') : i18n.get('goNaverpay');
+  switchPlatformWrap.style.display = 'block';
+}
+
 // 초기화
 async function init() {
   // i18n 텍스트 설정
@@ -117,6 +126,7 @@ async function init() {
     }
 
     showPlatformBadge(activePlatform);
+    setupSwitchLink(activePlatform);
 
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_PAGE' });
 
@@ -247,6 +257,13 @@ function updateUploadButton() {
 // 미지원 페이지 안내 — 네이버페이/쿠팡 주문내역으로 이동
 btnGoNaver.addEventListener('click', () => chrome.tabs.create({ url: PLATFORM_URLS.naverpay }));
 btnGoCoupang.addEventListener('click', () => chrome.tabs.create({ url: PLATFORM_URLS.coupang }));
+
+// 지원 페이지 — 반대 플랫폼 주문내역을 새 탭으로 연다
+switchPlatformEl.addEventListener('click', () => {
+  if (!activePlatform) return;
+  const other = activePlatform === 'naverpay' ? 'coupang' : 'naverpay';
+  chrome.tabs.create({ url: PLATFORM_URLS[other] });
+});
 
 // 전체 기간 드롭다운 (Excel / CSV 통합)
 function setAllMenuOpen(open) {
