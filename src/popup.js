@@ -34,6 +34,7 @@ const btnGoNaver = document.getElementById('btnGoNaver');
 const btnGoCoupang = document.getElementById('btnGoCoupang');
 const switchPlatformWrap = document.getElementById('switchPlatformWrap');
 const switchPlatformEl = document.getElementById('switchPlatform');
+const switchPlatformTextEl = document.getElementById('switchPlatformText');
 const eolmaActionEl = document.getElementById('eolmaAction');
 const serverPillEl = document.getElementById('serverPill');
 const serverPillTextEl = document.getElementById('serverPillText');
@@ -82,10 +83,12 @@ function showPlatformBadge(platform) {
   }
 }
 
-// 지원 페이지에서 반대 플랫폼 주문내역으로 이동하는 링크를 구성한다.
+// 지원 페이지에서 반대 플랫폼 주문내역으로 이동하는 버튼을 구성한다.
 function setupSwitchLink(platform) {
   const other = platform === 'naverpay' ? 'coupang' : 'naverpay';
-  switchPlatformEl.textContent = other === 'coupang' ? i18n.get('goCoupang') : i18n.get('goNaverpay');
+  // tint 클래스로 대상 플랫폼 색을 부여 (dot/배경). 텍스트는 자식 span 에만 주입해 dot/svg 보존.
+  switchPlatformEl.className = 'btn btn-switch ' + other;
+  switchPlatformTextEl.textContent = other === 'coupang' ? i18n.get('goCoupang') : i18n.get('goNaverpay');
   switchPlatformWrap.style.display = 'block';
 }
 

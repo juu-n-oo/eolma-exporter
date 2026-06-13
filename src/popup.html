@@ -296,6 +296,31 @@
     .btn-coupang { background: #E6450A; color: #fff; }
     .btn-coupang:hover { background: #cf3e09; }
 
+    /* 반대 플랫폼 이동 — 보조 tint 버튼 (.btn 상속: width/padding/radius/font/transition) */
+    .btn-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1D1D1F;            /* 본문 텍스트는 중립 다크 — 고대비 (브랜드 식별은 dot/배경이 전담) */
+    }
+    .btn-switch .switch-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .btn-switch .switch-arrow {
+      margin-left: auto;
+      display: inline-flex;
+      color: #86868B;            /* 화살표는 차분한 회색 */
+    }
+    .btn-switch.naverpay { background: #E8FDE8; }
+    .btn-switch.naverpay .switch-dot { background: #03C75A; }
+    .btn-switch.naverpay:hover { background: #dcf7dc; }
+    .btn-switch.coupang { background: #FFF0E8; }
+    .btn-switch.coupang .switch-dot { background: #E6450A; }
+    .btn-switch.coupang:hover { background: #ffe6da; }
+
     /* 전체 기간 다운로드 드롭다운 */
     .dropdown { position: relative; }
     .dropdown-toggle {
@@ -413,8 +438,16 @@
     </div>
 
     <!-- 반대 플랫폼 주문내역으로 이동 -->
-    <div class="footer" id="switchPlatformWrap" style="display:none;">
-      <a id="switchPlatform" class="footer-link"></a>
+    <div class="card" id="switchPlatformWrap" style="display:none;">
+      <button id="switchPlatform" type="button" class="btn btn-switch">
+        <span class="switch-dot"></span>
+        <span id="switchPlatformText"></span>
+        <span class="switch-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
+      </button>
     </div>
   </div>
 
