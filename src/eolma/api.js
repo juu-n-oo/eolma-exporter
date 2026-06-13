@@ -123,34 +123,48 @@ const eolmaApi = {
 
   /**
    * 수집 항목 1건을 staging bulk API 요청 형식으로 변환한다.
-   * - 필드: { amount, title, memo?, transactedAt } (구 'description' 키 대신 'title' 사용)
+   * - 필드: { amount, title, memo?, transactedAt, source? } (구 'description' 키 대신 'title' 사용)
+   * - source: 수집 platform 을 BE TransactionSource enum 으로 매핑(naverpay→NAVER_PAY, coupang→COUPANG).
+   *   알 수 없는 platform 이면 source 를 생략해 BE 가 MANUAL 로 폴백하게 둔다.
    * - 쿠팡 주문상태 처리:
    *   · '취소완료'/'반품완료' 포함 → amount 0 + 원금액을 memo 에 기록
    *   · '반품신청' 포함 → 금액 유지 + memo 로 상태 표기
    */
   _toStaging(item, platform) {
+    let staging;
     if (platform === 'naverpay') {
-      return {
+      staging = {
         amount: Number(item.결제금액) || 0,
         title: [item.가맹점명, item.상품명].filter(Boolean).join(' · '),
         transactedAt: String(item.결제일시 || '').slice(0, 10)
       };
+    } else {
+      const amount = Number(item.주문금액) || 0;
+      staging = {
+        amount,
+        title: [item.판매자, item.상품명].filter(Boolean).join(' · '),
+        transactedAt: String(item.주문일시 || '').slice(0, 10)
+      };
+
+      const status = String(item.주문상태 || '');
+      if (status.includes('취소완료') || status.includes('반품완료')) {
+        staging.amount = 0;
+        staging.memo = `주문상태: ${status} · 원금액 ${amount.toLocaleString('ko-KR')}원`;
+      } else if (status.includes('반품신청')) {
+        staging.memo = '주문상태: 반품신청';
+      }
     }
 
-    const amount = Number(item.주문금액) || 0;
-    const staging = {
-      amount,
-      title: [item.판매자, item.상품명].filter(Boolean).join(' · '),
-      transactedAt: String(item.주문일시 || '').slice(0, 10)
-    };
-
-    const status = String(item.주문상태 || '');
-    if (status.includes('취소완료') || status.includes('반품완료')) {
-      staging.amount = 0;
-      staging.memo = `주문상태: ${status} · 원금액 ${amount.toLocaleString('ko-KR')}원`;
-    } else if (status.includes('반품신청')) {
-      staging.memo = '주문상태: 반품신청';
+    const source = eolmaApi.SOURCE_BY_PLATFORM[platform];
+    if (source) {
+      staging.source = source;
     }
     return staging;
+  },
+
+  // 수집 platform → BE TransactionSource enum 매핑. 알 수 없는 값은 키 자체가 없어 BE 가 MANUAL 폴백.
+  SOURCE_BY_PLATFORM: {
+    naverpay: 'NAVER_PAY',
+    coupang: 'COUPANG'
   }
 };
