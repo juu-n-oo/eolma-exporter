@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+
+# Build output
+dist/
+
+# Packaged extension zips (배포는 크롬 웹스토어 수동 업로드)
+*.zip
