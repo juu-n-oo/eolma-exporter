@@ -1,4 +1,4 @@
-// Content Script: 쿠팡 주문내역 __NEXT_DATA__ 파싱 및 메시지 통신
+// Content Script: 쿠팡 주문내역 파싱 및 same-origin 다중 페이지 수집
 
 const STATUS_MAP = {
   DELIVERING: '배송중',
@@ -71,6 +71,47 @@ function formatDate(epochMs) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_CURRENT_PAGE') {
     sendResponse(parseOrderData());
+    return false;
   }
-  return true;
+
+  if (message.type === 'CANCEL_FETCH') {
+    activeCollectionController?.abort();
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (message.type === 'FETCH_BY_MONTH' || message.type === 'FETCH_ALL_PAGES') {
+    activeCollectionController?.abort();
+    activeCollectionController = new AbortController();
+    const controller = activeCollectionController;
+
+    CoupangCollector.collect({
+      fetchImpl: fetch.bind(globalThis),
+      all: message.type === 'FETCH_ALL_PAGES',
+      startMonth: message.startMonth,
+      endMonth: message.endMonth,
+      signal: controller.signal,
+      onProgress: (progress) => {
+        chrome.runtime.sendMessage({ type: 'FETCH_PROGRESS', ...progress }).catch(() => {});
+      }
+    }).then((result) => {
+      sendResponse({
+        ...result,
+        items: result.items.map(formatOrder)
+      });
+    }).catch((error) => {
+      sendResponse({
+        success: false,
+        error: error.message,
+        code: error.code || 'COLLECT_ERROR'
+      });
+    }).finally(() => {
+      if (activeCollectionController === controller) activeCollectionController = null;
+    });
+    return true;
+  }
+
+  return false;
 });
+
+let activeCollectionController = null;

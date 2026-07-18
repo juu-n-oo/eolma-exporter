@@ -205,6 +205,10 @@
     "message": "Starting data collection...",
     "description": "Data collection started message"
   },
+  "coupangReady": {
+    "message": "Ready to retrieve orders from your signed-in Coupang session.",
+    "description": "Coupang ready message when initial SSR data is unavailable"
+  },
   "noData": {
     "message": "No payment history found for this period.",
     "description": "No data message"
@@ -222,6 +226,36 @@
   "collectFailed": {
     "message": "Failed to collect data.",
     "description": "Data collection failed"
+  },
+  "cancelCollection": {
+    "message": "Cancel collection",
+    "description": "Button to cancel an in-progress collection"
+  },
+  "cancellingCollection": {
+    "message": "Cancelling collection...",
+    "description": "Collection cancellation in progress"
+  },
+  "collectionCancelled": {
+    "message": "Data collection was cancelled.",
+    "description": "Collection cancelled message"
+  },
+  "collectionComplete": {
+    "message": "Collection complete! ($COUNT$ items)",
+    "description": "Collection complete message",
+    "placeholders": {
+      "count": { "content": "$1", "example": "50" }
+    }
+  },
+  "partialDownloadComplete": {
+    "message": "Downloaded $COUNT$ partial items. Check the _partial suffix in the filename.",
+    "description": "Partial download complete message",
+    "placeholders": {
+      "count": { "content": "$1", "example": "50" }
+    }
+  },
+  "partialUploadBlocked": {
+    "message": "Only part of the order history was collected, so the Eolma upload was stopped. Check the partial CSV/Excel result.",
+    "description": "Partial result upload blocked message"
   },
   "searching": {
     "message": "Searching page $CURRENT$... ($ITEMS$ items collected)",

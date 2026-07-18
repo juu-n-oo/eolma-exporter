@@ -237,16 +237,29 @@ async function fetchCoupangByMonth(startMonth, endMonth) {
   const endMs = endDate.getTime();
 
   let allItems = [];
-  let pageIndex = 1;
+  let requestYear = endYear;
+  let pageIndex = 0;
   let done = false;
   let pageCount = 0;
+  const visited = new Set();
 
   while (!done) {
-    const result = await fetchCoupangPageRaw(pageIndex);
+    const cursorKey = `${requestYear}:${pageIndex}`;
+    if (visited.has(cursorKey)) {
+      return {
+        success: true,
+        items: dedupeCoupangOrders(allItems).map(formatCoupangItem),
+        partial: true,
+        error: '쿠팡이 같은 페이지를 반복해 수집을 중단했습니다.'
+      };
+    }
+    visited.add(cursorKey);
+
+    const result = await fetchCoupangPageRaw(requestYear, pageIndex);
     if (!result.success) {
       if (result.code === 'AUTH_ERROR') return result;
       if (allItems.length > 0) {
-        return { success: true, items: allItems.map(formatCoupangItem), partial: true };
+        return { success: true, items: dedupeCoupangOrders(allItems).map(formatCoupangItem), partial: true };
       }
       return result;
     }
@@ -266,27 +279,41 @@ async function fetchCoupangByMonth(startMonth, endMonth) {
       done = true;
     } else {
       pageIndex = result.nextPageIndex;
+      requestYear = result.nextYear ?? requestYear;
     }
   }
 
-  return { success: true, items: allItems.map(formatCoupangItem) };
+  return { success: true, items: dedupeCoupangOrders(allItems).map(formatCoupangItem) };
 }
 
 async function fetchCoupangAllPages() {
   let allItems = [];
-  let pageIndex = 1;
+  let requestYear = new Date().getFullYear();
+  let pageIndex = 0;
   let hasNext = true;
   let pageCount = 0;
+  const visited = new Set();
 
   while (hasNext) {
-    const result = await fetchCoupangPageRaw(pageIndex);
+    const cursorKey = `${requestYear}:${pageIndex}`;
+    if (visited.has(cursorKey)) {
+      return {
+        success: true,
+        items: dedupeCoupangOrders(allItems).map(formatCoupangItem),
+        partial: true,
+        error: '쿠팡이 같은 페이지를 반복해 수집을 중단했습니다.'
+      };
+    }
+    visited.add(cursorKey);
+
+    const result = await fetchCoupangPageRaw(requestYear, pageIndex);
     if (!result.success) {
       if (result.code === 'AUTH_ERROR') return result;
       if (allItems.length > 0) {
         return {
           success: false,
           error: `${pageIndex}페이지 로드 실패: ${result.error}`,
-          partialItems: allItems.map(formatCoupangItem)
+          partialItems: dedupeCoupangOrders(allItems).map(formatCoupangItem)
         };
       }
       return result;
@@ -305,15 +332,20 @@ async function fetchCoupangAllPages() {
 
     if (hasNext) {
       pageIndex = result.nextPageIndex;
+      requestYear = result.nextYear ?? requestYear;
     }
   }
 
-  return { success: true, items: allItems.map(formatCoupangItem) };
+  return { success: true, items: dedupeCoupangOrders(allItems).map(formatCoupangItem) };
 }
 
-async function fetchCoupangPageRaw(pageIndex) {
+async function fetchCoupangPageRaw(requestYear, pageIndex) {
   try {
-    const resp = await fetch(`https://mc.coupang.com/ssr/desktop/order/list?pageIndex=${pageIndex}`, {
+    const params = new URLSearchParams({
+      requestYear: String(requestYear),
+      pageIndex: String(pageIndex)
+    });
+    const resp = await fetch(`https://mc.coupang.com/ssr/desktop/order/list?${params}`, {
       credentials: 'include'
     });
 
@@ -359,11 +391,24 @@ function parseCoupangNextDataFromHtml(html) {
       success: true,
       orders: desktopOrder.orderList,
       hasNext: desktopOrder.orderPagination.hasNext,
-      nextPageIndex: desktopOrder.orderPagination.nextPageIndex
+      nextPageIndex: desktopOrder.orderPagination.nextPageIndex,
+      nextYear: desktopOrder.orderPagination.nextYear
     };
   } catch (e) {
     return { success: false, error: 'Parse error: ' + e.message };
   }
+}
+
+function dedupeCoupangOrders(orders) {
+  const seen = new Set();
+  return orders.filter((order) => {
+    const key = order.orderId == null
+      ? `${order.orderedAt || ''}:${order.title || ''}:${order.totalProductPrice || ''}`
+      : String(order.orderId);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function filterCoupangItemsByDate(orders, startMs, endMs) {

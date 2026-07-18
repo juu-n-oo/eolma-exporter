@@ -29,12 +29,24 @@
       object-fit: cover;
       display: block;
     }
-    .header-text { flex: 1; }
+    .header-text { flex: 1; min-width: 0; }
+    .header-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
     .header-title {
       font-size: 15px;
       font-weight: 600;
       color: #1D1D1F;
       line-height: 1.2;
+    }
+    .version-badge {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1;
+      color: #6E6E73;
     }
     .header-subtitle {
       font-size: 11px;
@@ -182,6 +194,15 @@
       margin-top: 5px;
       text-align: center;
     }
+    .btn-cancel {
+      margin-top: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      color: #FF3B30;
+      background: #FFF1F0;
+    }
+    .btn-cancel:hover { background: #FFE5E2; }
+    .btn-cancel:disabled { color: #AEAEB2; background: #F5F5F7; cursor: not-allowed; }
 
     /* Divider */
     .divider {
@@ -364,7 +385,10 @@
     <img class="logo" src="icons/icon48.png" alt="eolma exporter">
 
     <div class="header-text">
-      <div id="headerTitle" class="header-title">eolma exporter</div>
+      <div class="header-title-row">
+        <div id="headerTitle" class="header-title">eolma exporter</div>
+        <span id="versionBadge" class="version-badge"></span>
+      </div>
       <div id="headerSubtitle" class="header-subtitle">결제내역 내보내기</div>
     </div>
     <span id="platformBadge" class="platform-badge"></span>
@@ -434,6 +458,7 @@
           <div id="progressFill" class="progress-fill"></div>
         </div>
         <div id="progressText" class="progress-label"></div>
+        <button id="btnCancel" type="button" class="btn btn-cancel" style="display:none;"></button>
       </div>
     </div>
 

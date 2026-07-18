@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "__MSG_appDesc__",
   "default_locale": "ko",
   "permissions": [
@@ -25,7 +25,7 @@
     },
     {
       "matches": ["https://mc.coupang.com/ssr/desktop/order/list*"],
-      "js": ["content/coupang.js"],
+      "js": ["content/coupang-collector.js", "content/coupang.js"],
       "run_at": "document_idle"
     },
     {

@@ -24,6 +24,7 @@ const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 const platformBadgeEl = document.getElementById('platformBadge');
 const headerSubtitleEl = document.getElementById('headerSubtitle');
+const versionBadgeEl = document.getElementById('versionBadge');
 const btnAll = document.getElementById('btnAll');
 const allMenuEl = document.getElementById('allMenu');
 const allDropdownEl = document.getElementById('allDropdown');
@@ -42,6 +43,7 @@ const eolmaPillEl = document.getElementById('eolmaPill');
 const eolmaPillTextEl = document.getElementById('eolmaPillText');
 const btnUpload = document.getElementById('btnUpload');
 const uploadHintEl = document.getElementById('uploadHint');
+const btnCancel = document.getElementById('btnCancel');
 
 // 플랫폼별 주문내역 페이지 URL (detectPlatform / content_scripts 매칭과 일치)
 const PLATFORM_URLS = {
@@ -55,6 +57,8 @@ let activePlatform = null;
 let exportAll = false;
 let serverUp = false;
 let eolmaLoggedIn = false;
+let activeTabId = null;
+let exportPartial = false;
 
 const getPlatformLabel = (platform) => {
   const labels = {
@@ -96,6 +100,7 @@ function setupSwitchLink(platform) {
 async function init() {
   // i18n 텍스트 설정
   document.getElementById('headerTitle').textContent = i18n.get('headerTitle');
+  versionBadgeEl.textContent = `v${chrome.runtime.getManifest().version}`;
   document.getElementById('downloadRangeLabel').textContent = i18n.get('downloadRange');
   document.getElementById('monthLabel').textContent = i18n.get('yearMonth');
   document.getElementById('startLabel').textContent = i18n.get('start');
@@ -108,6 +113,7 @@ async function init() {
   btnGoNaver.textContent = i18n.get('goNaverpay');
   btnGoCoupang.textContent = i18n.get('goCoupang');
   btnUpload.textContent = i18n.get('eolmaUpload');
+  btnCancel.textContent = i18n.get('cancelCollection');
   unsupportedMsgEl.textContent = i18n.get('unsupportedPage');
 
   // rangeType 옵션 설정
@@ -121,6 +127,7 @@ async function init() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+    activeTabId = tab.id;
     activePlatform = detectPlatform(tab.url || '');
 
     if (!activePlatform) {
@@ -133,17 +140,22 @@ async function init() {
 
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_PAGE' });
 
-    if (!response || !response.success) {
+    if ((!response || !response.success) && activePlatform !== 'coupang') {
       showError(response?.error || i18n.get('dataFetchFailed'));
       return;
     }
 
-    currentPageData = response;
+    // 쿠팡의 초기 SSR 구조가 바뀌어도 JSON API 기반 수집은 시도할 수 있어야 한다.
+    currentPageData = response?.success ? response : { success: true, platform: 'coupang', itemCount: 0, hasNext: true };
     initDateSelectors();
 
     if (activePlatform === 'coupang') {
-      const more = response.hasNext ? ` ${i18n.get('nextPageAvailable')}` : '';
-      statusEl.textContent = i18n.get('currentPageInfo', [response.itemCount]) + more;
+      if (response?.success) {
+        const more = response.hasNext ? ` ${i18n.get('nextPageAvailable')}` : '';
+        statusEl.textContent = i18n.get('currentPageInfo', [response.itemCount]) + more;
+      } else {
+        statusEl.textContent = i18n.get('coupangReady');
+      }
     } else {
       statusEl.textContent = i18n.get('totalPageInfo', [response.totalPage, response.totalPage * response.itemCount]);
     }
@@ -309,17 +321,33 @@ btnAllCsv.addEventListener('click', () => startExport('csv', true));
 
 // eolma 업로드 버튼
 btnUpload.addEventListener('click', startUpload);
+btnCancel.addEventListener('click', async () => {
+  if (activePlatform !== 'coupang' || activeTabId == null) return;
+  btnCancel.disabled = true;
+  progressText.textContent = i18n.get('cancellingCollection');
+  try {
+    await chrome.tabs.sendMessage(activeTabId, { type: 'CANCEL_FETCH' });
+  } catch {
+    // 탭이 닫히거나 이동한 경우 진행 중 요청도 함께 사라진다.
+  }
+});
 
 async function startUpload() {
   setButtonsDisabled(true);
   progressEl.style.display = 'block';
   progressFill.classList.add('indeterminate');
   progressText.textContent = i18n.get('collecting');
+  setCancelVisible(true);
 
   try {
-    const items = await collectItems(rangeTypeEl.value === 'all');
+    const collection = await collectItems(rangeTypeEl.value === 'all');
+    const items = collection.items;
     if (!items || items.length === 0) {
       showError(i18n.get('noData'));
+      return;
+    }
+    if (collection.partial) {
+      showError(i18n.get('partialUploadBlocked'));
       return;
     }
     progressFill.classList.add('indeterminate');
@@ -328,10 +356,17 @@ async function startUpload() {
     const result = await eolmaApi.send({ platform: activePlatform, items });
     showStatus(i18n.get('uploadComplete', [result.uploadedCount]));
   } catch (e) {
-    handleUploadError(e);
+    if (e?.code === 'CANCELLED') {
+      showStatus(i18n.get('collectionCancelled'));
+    } else if (e?.collectionError) {
+      showError(e.message);
+    } else {
+      handleUploadError(e);
+    }
   } finally {
     progressFill.classList.remove('indeterminate');
     progressEl.style.display = 'none';
+    setCancelVisible(false);
     setButtonsDisabled(false);
   }
 }
@@ -361,13 +396,17 @@ async function startExport(format, all = false) {
   progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
   progressText.textContent = i18n.get('collecting');
+  exportPartial = false;
+  setCancelVisible(true);
 
   try {
-    const items = await collectItems(all);
+    const collection = await collectItems(all);
+    const items = collection.items;
     if (!items || items.length === 0) {
       showError(i18n.get('noData'));
       return;
     }
+    exportPartial = collection.partial;
 
     if (format === 'csv') {
       await downloadCsv(items);
@@ -375,12 +414,17 @@ async function startExport(format, all = false) {
       await downloadExcel(items);
     }
 
-    showStatus(i18n.get('downloadComplete', [items.length]));
+    showStatus(i18n.get(collection.partial ? 'partialDownloadComplete' : 'downloadComplete', [items.length]));
   } catch (e) {
-    showError(e.message);
+    if (e?.code === 'CANCELLED') {
+      showStatus(i18n.get('collectionCancelled'));
+    } else {
+      showError(e.message);
+    }
   } finally {
     progressFill.classList.remove('indeterminate');
     progressEl.style.display = 'none';
+    setCancelVisible(false);
     setButtonsDisabled(false);
   }
 }
@@ -405,41 +449,47 @@ function getSelectedRange() {
 
 async function collectItems(all = false) {
   const range = all ? null : getSelectedRange();
+  const message = range
+    ? {
+        type: 'FETCH_BY_MONTH',
+        platform: activePlatform,
+        startMonth: range.startMonth,
+        endMonth: range.endMonth
+      }
+    : {
+        type: 'FETCH_ALL_PAGES',
+        platform: activePlatform,
+        fromPage: 1
+      };
 
-  if (range) {
-    const response = await chrome.runtime.sendMessage({
-      type: 'FETCH_BY_MONTH',
-      platform: activePlatform,
-      startMonth: range.startMonth,
-      endMonth: range.endMonth
-    });
+  const response = activePlatform === 'coupang'
+    ? await chrome.tabs.sendMessage(activeTabId, message)
+    : await chrome.runtime.sendMessage(message);
 
-    if (!response.success) {
-      throw new Error(response.error || i18n.get('collectFailed'));
+  if (!response?.success) {
+    if (response?.partialItems?.length > 0) {
+      return { items: response.partialItems, partial: true, warning: response.error };
     }
-
-    progressFill.classList.remove('indeterminate');
-    progressFill.style.width = '100%';
-    progressText.textContent = `완료! (${response.items.length}건)`;
-    return response.items;
+    const error = new Error(response?.error || i18n.get('collectFailed'));
+    error.code = response?.code;
+    error.collectionError = true;
+    throw error;
   }
 
-  const response = await chrome.runtime.sendMessage({
-    type: 'FETCH_ALL_PAGES',
-    platform: activePlatform,
-    fromPage: 1
-  });
-
-  if (!response.success) {
-    if (response.partialItems && response.partialItems.length > 0) {
-      return response.partialItems;
-    }
-    throw new Error(response.error || i18n.get('collectFailed'));
-  }
-
+  progressFill.classList.remove('indeterminate');
   progressFill.style.width = '100%';
-  progressText.textContent = '완료!';
-  return response.items;
+  progressText.textContent = i18n.get('collectionComplete', [response.items.length]);
+  return {
+    items: response.items,
+    partial: Boolean(response.partial),
+    warning: response.error || null
+  };
+}
+
+function setCancelVisible(visible) {
+  const canCancel = visible && activePlatform === 'coupang';
+  btnCancel.style.display = canCancel ? 'block' : 'none';
+  btnCancel.disabled = false;
 }
 
 function setButtonsDisabled(disabled) {
@@ -498,14 +548,15 @@ async function downloadExcel(items) {
 
 function generateFilename(ext) {
   const platformName = activePlatform ? getPlatformLabel(activePlatform).toLowerCase() : 'eolma';
+  const partialSuffix = exportPartial ? '_partial' : '';
   const range = exportAll ? null : getSelectedRange();
   if (range) {
     if (range.startMonth === range.endMonth) {
-      return `${platformName}_${range.startMonth}.${ext}`;
+      return `${platformName}_${range.startMonth}${partialSuffix}.${ext}`;
     }
-    return `${platformName}_${range.startMonth}_${range.endMonth}.${ext}`;
+    return `${platformName}_${range.startMonth}_${range.endMonth}${partialSuffix}.${ext}`;
   }
-  return `${platformName}_all.${ext}`;
+  return `${platformName}_all${partialSuffix}.${ext}`;
 }
 
 function downloadBlob(blob, filename) {

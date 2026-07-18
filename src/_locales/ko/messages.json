@@ -205,6 +205,10 @@
     "message": "데이터 수집 시작...",
     "description": "데이터 수집 시작 메시지"
   },
+  "coupangReady": {
+    "message": "쿠팡 로그인 세션에서 주문내역을 조회할 준비가 되었습니다.",
+    "description": "초기 SSR 데이터를 읽지 못했을 때 쿠팡 수집 준비 안내"
+  },
   "noData": {
     "message": "해당 기간에 결제내역이 없습니다.",
     "description": "데이터 없음 메시지"
@@ -222,6 +226,36 @@
   "collectFailed": {
     "message": "데이터 수집에 실패했습니다.",
     "description": "데이터 수집 실패"
+  },
+  "cancelCollection": {
+    "message": "수집 취소",
+    "description": "진행 중인 데이터 수집 취소 버튼"
+  },
+  "cancellingCollection": {
+    "message": "수집을 취소하는 중...",
+    "description": "데이터 수집 취소 진행 메시지"
+  },
+  "collectionCancelled": {
+    "message": "데이터 수집을 취소했습니다.",
+    "description": "데이터 수집 취소 완료 메시지"
+  },
+  "collectionComplete": {
+    "message": "수집 완료! ($COUNT$건)",
+    "description": "데이터 수집 완료 메시지",
+    "placeholders": {
+      "count": { "content": "$1", "example": "50" }
+    }
+  },
+  "partialDownloadComplete": {
+    "message": "$COUNT$건의 부분 결과를 다운로드했습니다. 파일명의 _partial을 확인해주세요.",
+    "description": "부분 결과 다운로드 완료 메시지",
+    "placeholders": {
+      "count": { "content": "$1", "example": "50" }
+    }
+  },
+  "partialUploadBlocked": {
+    "message": "일부 주문만 수집되어 eolma 전송을 중단했습니다. CSV/Excel 부분 결과를 확인해주세요.",
+    "description": "부분 결과 업로드 차단 안내"
   },
   "searching": {
     "message": "$CURRENT$페이지 검색 중... ($ITEMS$건 수집)",
