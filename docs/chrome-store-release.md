@@ -15,6 +15,7 @@ bash scripts/package-chrome-store.sh
 - 자동 테스트 실행
 - `dist/eolma-exporter-v0.3.3.zip` 생성
 - ZIP 최상위에 `manifest.json`이 있는지 확인하고 SHA-256 출력
+- 스토어 설명·개인정보 보호 신고의 갱신 필요 여부를 확인하라는 안내 출력
 
 `dist/`는 배포 산출물이며 Git에 포함하지 않는다.
 
@@ -26,6 +27,7 @@ bash scripts/package-chrome-store.sh
 2. eolma 탭이 없을 때 전송이 비활성화되고 안내가 표시되는지
 3. 로그인한 eolma 탭을 열면 전송이 활성화되고, 전송 후 검토 대기함에 내역이 들어가는지
 4. 확장 프로그램 저장소에 eolma 토큰이 남지 않는지
+5. [등록 정보 문서](./chrome-web-store-listing.ko.md)의 설명·개인정보 보호 관행·권한 정당성이 이번 변경과 일치하는지
 
 ## 개발자 대시보드 제출
 

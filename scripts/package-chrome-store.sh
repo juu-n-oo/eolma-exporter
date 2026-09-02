@@ -21,3 +21,8 @@ fi
 
 shasum -a 256 "$ARTIFACT"
 echo "Created $ARTIFACT"
+echo
+echo "Chrome Web Store release reminder:"
+echo "  Review docs/chrome-web-store-listing.ko.md before submitting."
+echo "  Update the Store listing and privacy disclosure if features, user data, permissions,"
+echo "  supported sites, upload flow, or Store images changed."
