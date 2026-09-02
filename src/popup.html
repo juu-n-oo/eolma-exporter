@@ -382,14 +382,14 @@
 <body>
 
   <div class="header">
-    <img class="logo" src="icons/icon48.png" alt="eolma exporter">
+    <img class="logo" src="icons/icon48.png" alt="eolma 내보내기">
 
     <div class="header-text">
       <div class="header-title-row">
-        <div id="headerTitle" class="header-title">eolma exporter</div>
+        <div class="header-title">eolma 내보내기</div>
         <span id="versionBadge" class="version-badge"></span>
       </div>
-      <div id="headerSubtitle" class="header-subtitle">결제내역 내보내기</div>
+      <div id="headerSubtitle" class="header-subtitle">결제 내역 내보내기</div>
     </div>
     <span id="platformBadge" class="platform-badge"></span>
   </div>
@@ -398,18 +398,18 @@
   <div id="controls" style="display:none;">
     <div class="card">
       <div class="field">
-        <div id="downloadRangeLabel" class="field-label">다운로드 범위</div>
+        <div class="field-label">다운로드 범위</div>
         <select id="rangeType">
-          <option value="month" selected></option>
-          <option value="range"></option>
-          <option value="all"></option>
+          <option value="month" selected>월 선택</option>
+          <option value="range">기간 선택</option>
+          <option value="all">전체 기간</option>
         </select>
       </div>
 
       <div id="monthSelect">
         <div class="divider"></div>
         <div class="field">
-          <div id="monthLabel" class="field-label">년월</div>
+          <div class="field-label">년월</div>
           <input type="month" id="month">
         </div>
       </div>
@@ -417,40 +417,40 @@
       <div id="rangeSelect" style="display:none;">
         <div class="divider"></div>
         <div class="field">
-          <div id="startLabel" class="field-label">시작</div>
+          <div class="field-label">시작</div>
           <input type="month" id="startMonth">
         </div>
         <div class="field">
-          <div id="endLabel" class="field-label">끝</div>
+          <div class="field-label">끝</div>
           <input type="month" id="endMonth">
         </div>
       </div>
     </div>
 
     <div class="card">
-      <button id="btnExcel" class="btn btn-primary"></button>
-      <button id="btnCsv" class="btn btn-secondary"></button>
+      <button id="btnExcel" class="btn btn-primary">Excel 다운로드</button>
+      <button id="btnCsv" class="btn btn-secondary">CSV 다운로드</button>
 
       <div class="divider"></div>
 
       <!-- 전체 기간: 단일 드롭다운으로 통합 (Excel / CSV 선택) -->
       <div id="allDropdown" class="dropdown">
         <button id="btnAll" class="btn btn-secondary dropdown-toggle">
-          <span id="allPeriodLabel">전체 기간</span>
+          <span>전체 기간</span>
           <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
         <div id="allMenu" class="dropdown-menu" style="display:none;">
-          <button id="btnAllExcel" class="dropdown-item"></button>
-          <button id="btnAllCsv" class="dropdown-item"></button>
+          <button id="btnAllExcel" class="dropdown-item">전체 Excel 다운로드</button>
+          <button id="btnAllCsv" class="dropdown-item">전체 CSV 다운로드</button>
         </div>
       </div>
 
       <div class="divider"></div>
 
       <!-- eolma 업로드 (로그인 + 서버 가용 시 활성) -->
-      <button id="btnUpload" class="btn btn-primary"></button>
+      <button id="btnUpload" class="btn btn-primary">eolma로 전송</button>
       <div id="uploadHint" class="empty-msg" style="display:none; margin-top: 6px;"></div>
 
       <div id="progress" class="progress">
@@ -458,7 +458,7 @@
           <div id="progressFill" class="progress-fill"></div>
         </div>
         <div id="progressText" class="progress-label"></div>
-        <button id="btnCancel" type="button" class="btn btn-cancel" style="display:none;"></button>
+        <button id="btnCancel" type="button" class="btn btn-cancel" style="display:none;">수집 취소</button>
       </div>
     </div>
 
@@ -484,11 +484,11 @@
   <!-- 네이버페이/쿠팡 주문내역 페이지가 아닐 때 -->
   <div id="unsupported" style="display:none;">
     <div class="card">
-      <div id="unsupportedMsg" class="empty-msg"></div>
+      <div id="unsupportedMsg" class="empty-msg">네이버페이 또는 쿠팡 주문내역 페이지에서 사용할 수 있습니다.</div>
     </div>
     <div class="card">
-      <button id="btnGoNaver" class="btn btn-naver"></button>
-      <button id="btnGoCoupang" class="btn btn-coupang"></button>
+      <button id="btnGoNaver" class="btn btn-naver">네이버페이 주문내역 열기</button>
+      <button id="btnGoCoupang" class="btn btn-coupang">쿠팡 주문내역 열기</button>
     </div>
   </div>
 
@@ -496,11 +496,11 @@
   <div class="card status-pills" style="margin-top: 2px;">
     <span id="serverPill" class="pill">
       <span class="pill-dot"></span>
-      <span id="serverPillText">...</span>
+      <span id="serverPillText">서버 상태 확인 중...</span>
     </span>
     <span id="eolmaPill" class="pill">
       <span class="pill-dot"></span>
-      <span id="eolmaPillText">...</span>
+      <span id="eolmaPillText">로그인 상태 확인 중...</span>
     </span>
     <a id="eolmaAction" class="footer-link eolma-action" target="_blank" style="display:none; margin-left:auto;"></a>
   </div>

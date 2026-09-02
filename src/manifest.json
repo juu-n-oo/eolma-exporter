@@ -1,9 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_appName__",
+  "name": "eolma 내보내기",
   "version": "0.3.0",
-  "description": "__MSG_appDesc__",
-  "default_locale": "ko",
+  "description": "네이버페이·쿠팡 주문내역을 Excel/CSV로 내보내고 eolma 가계부로 전송합니다.",
   "permissions": [
     "activeTab",
     "downloads",

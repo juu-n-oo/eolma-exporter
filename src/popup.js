@@ -1,11 +1,51 @@
 // Popup 로직
 
-// i18n helper
-const i18n = {
-  get(key, placeholders = []) {
-    return chrome.i18n.getMessage(key, placeholders);
-  }
-};
+// 이 확장 프로그램은 한국어 전용으로 제공한다. 플랫폼명·상태 문구처럼
+// 동적으로 조합되는 텍스트만 한곳에 둔다.
+const TEXT = Object.freeze({
+  naverpay: '네이버페이',
+  coupang: '쿠팡',
+  headerSubtitle: '결제 내역 내보내기',
+  goNaverpay: '네이버페이 주문내역 열기',
+  goCoupang: '쿠팡 주문내역 열기',
+  dataFetchFailed: '데이터를 가져올 수 없습니다. 페이지를 새로고침해주세요.',
+  refreshPage: '페이지를 새로고침한 뒤 확장 프로그램 아이콘을 다시 클릭해주세요.',
+  eolmaChecking: 'eolma 로그인 확인 중...',
+  eolmaLoggedIn: '로그인됨',
+  eolmaLoggedOut: '미로그인',
+  eolmaUnknown: '로그인 상태 확인 불가',
+  visitEolma: 'eolma 가계부 방문 →',
+  eolmaLogin: 'eolma 로그인',
+  serverChecking: '서버 상태 확인 중...',
+  serverUp: 'Online',
+  serverDown: 'Offline',
+  uploadNeedServer: '서버 연결 후 전송할 수 있습니다.',
+  uploadNeedLogin: 'eolma 로그인 후 전송할 수 있습니다.',
+  uploadAuthError: 'eolma 재로그인이 필요합니다. 데이터는 Excel/CSV로 내려받을 수 있습니다.',
+  uploadForbidden: '권한이 없어 전송할 수 없습니다.',
+  uploadNetworkError: 'eolma 서버에 연결할 수 없습니다.',
+  uploadNoValid: '전송할 수 있는 항목이 없습니다.',
+  uploadServerError: '서버 오류로 전송에 실패했습니다. 잠시 후 다시 시도하거나 Excel/CSV로 내려받으세요.',
+  coupangReady: '쿠팡 로그인 세션에서 주문내역을 조회할 준비가 되었습니다.',
+  noData: '해당 기간에 결제내역이 없습니다.',
+  partialUploadBlocked: '일부 주문만 수집되어 eolma 전송을 중단했습니다. CSV/Excel 부분 결과를 확인해주세요.',
+  collectionCancelled: '데이터 수집을 취소했습니다.',
+  collecting: '데이터 수집 시작...',
+  cancellingCollection: '수집을 취소하는 중...',
+  collectFailed: '데이터 수집에 실패했습니다.',
+  excelLoadError: 'Excel 라이브러리를 로드할 수 없습니다. CSV로 다운로드합니다.',
+  paymentHistory: '결제내역',
+  currentPageInfo: (count) => `현재 페이지 ${count}건`,
+  totalPageInfo: (total, count) => `총 ${total}페이지 (약 ${count}건)`,
+  nextPageAvailable: '(다음 페이지 있음)',
+  searching: (current, items) => `${current}페이지 검색 중... (${items}건 수집)`,
+  searchingTotal: (current, total, items) => `${current} / ${total}페이지 검색 중... (${items}건 수집)`,
+  uploading: (count) => `${count}건 eolma로 전송 중...`,
+  uploadComplete: (count) => `eolma 전송 완료! (${count}건)`,
+  downloadComplete: (count) => `${count}건 다운로드 완료!`,
+  partialDownloadComplete: (count) => `${count}건의 부분 결과를 다운로드했습니다. 파일명의 _부분을 확인해주세요.`,
+  collectionComplete: (count) => `수집 완료! (${count}건)`
+});
 
 const statusEl = document.getElementById('status');
 const controlsEl = document.getElementById('controls');
@@ -30,7 +70,6 @@ const allMenuEl = document.getElementById('allMenu');
 const allDropdownEl = document.getElementById('allDropdown');
 const statusCardEl = document.getElementById('statusCard');
 const unsupportedEl = document.getElementById('unsupported');
-const unsupportedMsgEl = document.getElementById('unsupportedMsg');
 const btnGoNaver = document.getElementById('btnGoNaver');
 const btnGoCoupang = document.getElementById('btnGoCoupang');
 const switchPlatformWrap = document.getElementById('switchPlatformWrap');
@@ -62,8 +101,8 @@ let exportPartial = false;
 
 const getPlatformLabel = (platform) => {
   const labels = {
-    naverpay: i18n.get('naverpay'),
-    coupang: i18n.get('coupang')
+    naverpay: TEXT.naverpay,
+    coupang: TEXT.coupang
   };
   return labels[platform] || platform;
 };
@@ -83,7 +122,7 @@ function showPlatformBadge(platform) {
   platformBadgeEl.className = `platform-badge ${platform}`;
   platformBadgeEl.style.display = 'inline-block';
   if (headerSubtitleEl) {
-    headerSubtitleEl.textContent = `${getPlatformLabel(platform)} ${i18n.get('headerSubtitle')}`;
+    headerSubtitleEl.textContent = `${getPlatformLabel(platform)} ${TEXT.headerSubtitle}`;
   }
 }
 
@@ -92,34 +131,13 @@ function setupSwitchLink(platform) {
   const other = platform === 'naverpay' ? 'coupang' : 'naverpay';
   // tint 클래스로 대상 플랫폼 색을 부여 (dot/배경). 텍스트는 자식 span 에만 주입해 dot/svg 보존.
   switchPlatformEl.className = 'btn btn-switch ' + other;
-  switchPlatformTextEl.textContent = other === 'coupang' ? i18n.get('goCoupang') : i18n.get('goNaverpay');
+  switchPlatformTextEl.textContent = other === 'coupang' ? TEXT.goCoupang : TEXT.goNaverpay;
   switchPlatformWrap.style.display = 'block';
 }
 
 // 초기화
 async function init() {
-  // i18n 텍스트 설정
-  document.getElementById('headerTitle').textContent = i18n.get('headerTitle');
   versionBadgeEl.textContent = `v${chrome.runtime.getManifest().version}`;
-  document.getElementById('downloadRangeLabel').textContent = i18n.get('downloadRange');
-  document.getElementById('monthLabel').textContent = i18n.get('yearMonth');
-  document.getElementById('startLabel').textContent = i18n.get('start');
-  document.getElementById('endLabel').textContent = i18n.get('end');
-  btnExcel.textContent = i18n.get('downloadExcel');
-  btnCsv.textContent = i18n.get('downloadCsv');
-  document.getElementById('allPeriodLabel').textContent = i18n.get('allPeriod');
-  btnAllExcel.textContent = i18n.get('allExcel');
-  btnAllCsv.textContent = i18n.get('allCsv');
-  btnGoNaver.textContent = i18n.get('goNaverpay');
-  btnGoCoupang.textContent = i18n.get('goCoupang');
-  btnUpload.textContent = i18n.get('eolmaUpload');
-  btnCancel.textContent = i18n.get('cancelCollection');
-  unsupportedMsgEl.textContent = i18n.get('unsupportedPage');
-
-  // rangeType 옵션 설정
-  rangeTypeEl.options[0].textContent = i18n.get('selectMonth');
-  rangeTypeEl.options[1].textContent = i18n.get('selectRange');
-  rangeTypeEl.options[2].textContent = i18n.get('selectAll');
 
   // 서버 가용 여부 + eolma 로그인 상태 (페이지 종류와 무관하게 표시)
   refreshEolmaState();
@@ -141,7 +159,7 @@ async function init() {
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_PAGE' });
 
     if ((!response || !response.success) && activePlatform !== 'coupang') {
-      showError(response?.error || i18n.get('dataFetchFailed'));
+      showError(response?.error || TEXT.dataFetchFailed);
       return;
     }
 
@@ -151,21 +169,21 @@ async function init() {
 
     if (activePlatform === 'coupang') {
       if (response?.success) {
-        const more = response.hasNext ? ` ${i18n.get('nextPageAvailable')}` : '';
-        statusEl.textContent = i18n.get('currentPageInfo', [response.itemCount]) + more;
+        const more = response.hasNext ? ` ${TEXT.nextPageAvailable}` : '';
+        statusEl.textContent = TEXT.currentPageInfo(response.itemCount) + more;
       } else {
-        statusEl.textContent = i18n.get('coupangReady');
+        statusEl.textContent = TEXT.coupangReady;
       }
     } else {
-      statusEl.textContent = i18n.get('totalPageInfo', [response.totalPage, response.totalPage * response.itemCount]);
+      statusEl.textContent = TEXT.totalPageInfo(response.totalPage, response.totalPage * response.itemCount);
     }
     controlsEl.style.display = 'block';
     updateUploadButton();
   } catch (e) {
     if (e?.message?.includes('Could not establish connection') || e?.message?.includes('Receiving end does not exist')) {
-      showError(i18n.get('refreshPage'));
+      showError(TEXT.refreshPage);
     } else {
-      showError(i18n.get('dataFetchFailed'));
+      showError(TEXT.dataFetchFailed);
     }
   }
 }
@@ -203,7 +221,7 @@ function showUnsupported() {
 // eolma 로그인 상태를 확인해 LED pill 로 표시
 async function renderEolmaStatus() {
   eolmaPillEl.classList.remove('on', 'off');
-  eolmaPillTextEl.textContent = i18n.get('eolmaChecking');
+  eolmaPillTextEl.textContent = TEXT.eolmaChecking;
   eolmaActionEl.style.display = 'none';
 
   let result = { loggedIn: false };
@@ -216,13 +234,13 @@ async function renderEolmaStatus() {
   eolmaLoggedIn = !!result.loggedIn;
   if (result.loggedIn) {
     eolmaPillEl.classList.add('on');
-    eolmaPillTextEl.textContent = result.user?.name || i18n.get('eolmaLoggedIn');
-    eolmaActionEl.textContent = i18n.get('visitEolma');
+    eolmaPillTextEl.textContent = result.user?.name || TEXT.eolmaLoggedIn;
+    eolmaActionEl.textContent = TEXT.visitEolma;
     eolmaActionEl.href = EOLMA_HOME;
   } else {
     eolmaPillEl.classList.remove('on', 'off');
-    eolmaPillTextEl.textContent = i18n.get('eolmaLoggedOut');
-    eolmaActionEl.textContent = i18n.get('eolmaLogin');
+    eolmaPillTextEl.textContent = TEXT.eolmaLoggedOut;
+    eolmaActionEl.textContent = TEXT.eolmaLogin;
     eolmaActionEl.href = `${EOLMA_HOME}/login`;
   }
   eolmaActionEl.style.display = 'inline';
@@ -231,21 +249,21 @@ async function renderEolmaStatus() {
 // 서버 가용 여부(Online/Offline) → (가용 시) eolma 로그인 상태 순으로 갱신
 async function refreshEolmaState() {
   serverPillEl.classList.remove('on', 'off');
-  serverPillTextEl.textContent = i18n.get('serverChecking');
+  serverPillTextEl.textContent = TEXT.serverChecking;
 
   serverUp = await eolmaApi.checkHealth();
 
   if (serverUp) {
     serverPillEl.classList.add('on');
-    serverPillTextEl.textContent = i18n.get('serverUp');
+    serverPillTextEl.textContent = TEXT.serverUp;
     await renderEolmaStatus();
   } else {
     serverPillEl.classList.add('off');
-    serverPillTextEl.textContent = i18n.get('serverDown');
+    serverPillTextEl.textContent = TEXT.serverDown;
     // 서버 미가용 시 로그인 확인 불가
     eolmaLoggedIn = false;
     eolmaPillEl.classList.remove('on', 'off');
-    eolmaPillTextEl.textContent = i18n.get('eolmaUnknown');
+    eolmaPillTextEl.textContent = TEXT.eolmaUnknown;
     eolmaActionEl.style.display = 'none';
   }
   updateUploadButton();
@@ -259,10 +277,10 @@ function updateUploadButton() {
   if (!activePlatform) {
     uploadHintEl.style.display = 'none';
   } else if (!serverUp) {
-    uploadHintEl.textContent = i18n.get('uploadNeedServer');
+    uploadHintEl.textContent = TEXT.uploadNeedServer;
     uploadHintEl.style.display = 'block';
   } else if (!eolmaLoggedIn) {
-    uploadHintEl.textContent = i18n.get('uploadNeedLogin');
+    uploadHintEl.textContent = TEXT.uploadNeedLogin;
     uploadHintEl.style.display = 'block';
   } else {
     uploadHintEl.style.display = 'none';
@@ -303,12 +321,12 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'FETCH_PROGRESS') {
     if (message.total == null) {
       progressFill.classList.add('indeterminate');
-      progressText.textContent = i18n.get('searching', [message.current, message.itemCount || 0]);
+      progressText.textContent = TEXT.searching(message.current, message.itemCount || 0);
     } else {
       progressFill.classList.remove('indeterminate');
       const pct = Math.round((message.current / message.total) * 100);
       progressFill.style.width = pct + '%';
-      progressText.textContent = i18n.get('searchingTotal', [message.current, message.total, message.itemCount || 0]);
+      progressText.textContent = TEXT.searchingTotal(message.current, message.total, message.itemCount || 0);
     }
   }
 });
@@ -324,7 +342,7 @@ btnUpload.addEventListener('click', startUpload);
 btnCancel.addEventListener('click', async () => {
   if (activePlatform !== 'coupang' || activeTabId == null) return;
   btnCancel.disabled = true;
-  progressText.textContent = i18n.get('cancellingCollection');
+  progressText.textContent = TEXT.cancellingCollection;
   try {
     await chrome.tabs.sendMessage(activeTabId, { type: 'CANCEL_FETCH' });
   } catch {
@@ -336,28 +354,28 @@ async function startUpload() {
   setButtonsDisabled(true);
   progressEl.style.display = 'block';
   progressFill.classList.add('indeterminate');
-  progressText.textContent = i18n.get('collecting');
+  progressText.textContent = TEXT.collecting;
   setCancelVisible(true);
 
   try {
     const collection = await collectItems(rangeTypeEl.value === 'all');
     const items = collection.items;
     if (!items || items.length === 0) {
-      showError(i18n.get('noData'));
+      showError(TEXT.noData);
       return;
     }
     if (collection.partial) {
-      showError(i18n.get('partialUploadBlocked'));
+      showError(TEXT.partialUploadBlocked);
       return;
     }
     progressFill.classList.add('indeterminate');
-    progressText.textContent = i18n.get('uploading', [items.length]);
+    progressText.textContent = TEXT.uploading(items.length);
 
     const result = await eolmaApi.send({ platform: activePlatform, items });
-    showStatus(i18n.get('uploadComplete', [result.uploadedCount]));
+    showStatus(TEXT.uploadComplete(result.uploadedCount));
   } catch (e) {
     if (e?.code === 'CANCELLED') {
-      showStatus(i18n.get('collectionCancelled'));
+      showStatus(TEXT.collectionCancelled);
     } else if (e?.collectionError) {
       showError(e.message);
     } else {
@@ -375,17 +393,17 @@ async function startUpload() {
 function handleUploadError(e) {
   const status = e?.status;
   if (status === 401) {
-    showError(i18n.get('uploadAuthError'));
+    showError(TEXT.uploadAuthError);
     refreshEolmaState();
   } else if (status === 403) {
-    showError(i18n.get('uploadForbidden'));
+    showError(TEXT.uploadForbidden);
   } else if (status === 0) {
-    showError(i18n.get('uploadNetworkError'));
+    showError(TEXT.uploadNetworkError);
     refreshEolmaState();
   } else if (status === 422) {
-    showError(i18n.get('uploadNoValid'));
+    showError(TEXT.uploadNoValid);
   } else {
-    showError(i18n.get('uploadServerError'));
+    showError(TEXT.uploadServerError);
   }
 }
 
@@ -395,7 +413,7 @@ async function startExport(format, all = false) {
   progressEl.style.display = 'block';
   progressFill.classList.remove('indeterminate');
   progressFill.style.width = '0%';
-  progressText.textContent = i18n.get('collecting');
+  progressText.textContent = TEXT.collecting;
   exportPartial = false;
   setCancelVisible(true);
 
@@ -403,7 +421,7 @@ async function startExport(format, all = false) {
     const collection = await collectItems(all);
     const items = collection.items;
     if (!items || items.length === 0) {
-      showError(i18n.get('noData'));
+      showError(TEXT.noData);
       return;
     }
     exportPartial = collection.partial;
@@ -414,10 +432,10 @@ async function startExport(format, all = false) {
       await downloadExcel(items);
     }
 
-    showStatus(i18n.get(collection.partial ? 'partialDownloadComplete' : 'downloadComplete', [items.length]));
+    showStatus(collection.partial ? TEXT.partialDownloadComplete(items.length) : TEXT.downloadComplete(items.length));
   } catch (e) {
     if (e?.code === 'CANCELLED') {
-      showStatus(i18n.get('collectionCancelled'));
+      showStatus(TEXT.collectionCancelled);
     } else {
       showError(e.message);
     }
@@ -470,7 +488,7 @@ async function collectItems(all = false) {
     if (response?.partialItems?.length > 0) {
       return { items: response.partialItems, partial: true, warning: response.error };
     }
-    const error = new Error(response?.error || i18n.get('collectFailed'));
+    const error = new Error(response?.error || TEXT.collectFailed);
     error.code = response?.code;
     error.collectionError = true;
     throw error;
@@ -478,7 +496,7 @@ async function collectItems(all = false) {
 
   progressFill.classList.remove('indeterminate');
   progressFill.style.width = '100%';
-  progressText.textContent = i18n.get('collectionComplete', [response.items.length]);
+  progressText.textContent = TEXT.collectionComplete(response.items.length);
   return {
     items: response.items,
     partial: Boolean(response.partial),
@@ -532,14 +550,14 @@ async function downloadCsv(items) {
 // Excel 다운로드
 async function downloadExcel(items) {
   if (typeof XLSX === 'undefined') {
-    showError(i18n.get('excelLoadError'));
+    showError(TEXT.excelLoadError);
     await downloadCsv(items);
     return;
   }
 
   const ws = XLSX.utils.json_to_sheet(items);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, i18n.get('paymentHistory'));
+  XLSX.utils.book_append_sheet(wb, ws, TEXT.paymentHistory);
 
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -548,7 +566,7 @@ async function downloadExcel(items) {
 
 function generateFilename(ext) {
   const platformName = activePlatform ? getPlatformLabel(activePlatform).toLowerCase() : 'eolma';
-  const partialSuffix = exportPartial ? '_partial' : '';
+  const partialSuffix = exportPartial ? '_부분' : '';
   const range = exportAll ? null : getSelectedRange();
   if (range) {
     if (range.startMonth === range.endMonth) {
@@ -556,7 +574,7 @@ function generateFilename(ext) {
     }
     return `${platformName}_${range.startMonth}_${range.endMonth}${partialSuffix}.${ext}`;
   }
-  return `${platformName}_all${partialSuffix}.${ext}`;
+  return `${platformName}_전체${partialSuffix}.${ext}`;
 }
 
 function downloadBlob(blob, filename) {

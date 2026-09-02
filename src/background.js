@@ -6,12 +6,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (platform === 'coupang') {
       fetchCoupangAllPages()
         .then(sendResponse)
-        .catch(e => sendResponse({ success: false, error: e.message }));
+        .catch((error) => sendResponse(unexpectedCollectionError(error)));
       return true;
     }
     fetchAllPages(message.fromPage || 1, message.toPage)
       .then(sendResponse)
-      .catch(e => sendResponse({ success: false, error: e.message }));
+      .catch((error) => sendResponse(unexpectedCollectionError(error)));
     return true;
   }
 
@@ -20,15 +20,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (platform === 'coupang') {
       fetchCoupangByMonth(message.startMonth, message.endMonth)
         .then(sendResponse)
-        .catch(e => sendResponse({ success: false, error: e.message }));
+        .catch((error) => sendResponse(unexpectedCollectionError(error)));
       return true;
     }
     fetchByMonth(message.startMonth, message.endMonth)
       .then(sendResponse)
-      .catch(e => sendResponse({ success: false, error: e.message }));
+      .catch((error) => sendResponse(unexpectedCollectionError(error)));
     return true;
   }
 });
+
+function unexpectedCollectionError(error) {
+  console.error('결제내역 수집 중 예기치 못한 오류가 발생했습니다.', error);
+  return {
+    success: false,
+    error: '데이터를 수집하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    code: 'COLLECT_ERROR'
+  };
+}
 
 // ── 네이버페이 ──────────────────────────────────────────────────────────────
 
@@ -175,7 +184,7 @@ async function fetchPageRaw(page) {
 function parseNextDataFromHtml(html) {
   const match = html.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (!match) {
-    return { success: false, error: '__NEXT_DATA__ not found in HTML' };
+    return { success: false, error: '네이버페이 결제내역 정보를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 
   try {
@@ -190,7 +199,8 @@ function parseNextDataFromHtml(html) {
       itemCount: pageData.itemCount
     };
   } catch (e) {
-    return { success: false, error: 'Parse error: ' + e.message };
+    console.warn('네이버페이 결제내역 파싱에 실패했습니다.', e);
+    return { success: false, error: '네이버페이 결제내역을 해석하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 }
 
@@ -376,7 +386,7 @@ function httpErrorCode(status) {
 function parseCoupangNextDataFromHtml(html) {
   const match = html.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (!match) {
-    return { success: false, error: '__NEXT_DATA__ not found in HTML' };
+    return { success: false, error: '쿠팡 주문내역 정보를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 
   try {
@@ -395,7 +405,8 @@ function parseCoupangNextDataFromHtml(html) {
       nextYear: desktopOrder.orderPagination.nextYear
     };
   } catch (e) {
-    return { success: false, error: 'Parse error: ' + e.message };
+    console.warn('쿠팡 주문내역 파싱에 실패했습니다.', e);
+    return { success: false, error: '쿠팡 주문내역을 해석하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 }
 

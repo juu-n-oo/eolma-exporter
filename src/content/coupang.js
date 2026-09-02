@@ -14,7 +14,7 @@ const STATUS_MAP = {
 function parseOrderData() {
   const scriptEl = document.getElementById('__NEXT_DATA__');
   if (!scriptEl) {
-    return { success: false, error: '__NEXT_DATA__를 찾을 수 없습니다.' };
+    return { success: false, error: '주문내역 정보를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 
   try {
@@ -38,7 +38,8 @@ function parseOrderData() {
       totalPage: null
     };
   } catch (e) {
-    return { success: false, error: '데이터 파싱 실패: ' + e.message };
+    console.warn('쿠팡 주문내역 파싱에 실패했습니다.', e);
+    return { success: false, error: '주문내역을 해석하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 }
 
@@ -100,9 +101,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         items: result.items.map(formatOrder)
       });
     }).catch((error) => {
+      console.warn('쿠팡 주문내역 수집에 실패했습니다.', error);
       sendResponse({
         success: false,
-        error: error.message,
+        error: error?.code === 'CANCELLED'
+          ? '수집이 취소되었습니다.'
+          : '주문내역을 수집하지 못했습니다. 잠시 후 다시 시도해주세요.',
         code: error.code || 'COLLECT_ERROR'
       });
     }).finally(() => {

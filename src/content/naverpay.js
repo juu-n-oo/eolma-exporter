@@ -3,7 +3,7 @@
 function parsePaymentData() {
   const scriptEl = document.getElementById('__NEXT_DATA__');
   if (!scriptEl) {
-    return { success: false, error: '__NEXT_DATA__를 찾을 수 없습니다.' };
+    return { success: false, error: '결제내역 정보를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 
   try {
@@ -25,7 +25,8 @@ function parsePaymentData() {
       itemCount: pageData.itemCount
     };
   } catch (e) {
-    return { success: false, error: '데이터 파싱 실패: ' + e.message };
+    console.warn('네이버페이 결제내역 파싱에 실패했습니다.', e);
+    return { success: false, error: '결제내역을 해석하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.' };
   }
 }
 
