@@ -13,6 +13,7 @@ const TEXT = Object.freeze({
   eolmaChecking: 'eolma 로그인 확인 중...',
   eolmaLoggedIn: '로그인됨',
   eolmaLoggedOut: '미로그인',
+  eolmaTabRequired: 'eolma 탭에서 로그인 필요',
   eolmaUnknown: '로그인 상태 확인 불가',
   visitEolma: 'eolma 가계부 방문 →',
   eolmaLogin: 'eolma 로그인',
@@ -21,6 +22,7 @@ const TEXT = Object.freeze({
   serverDown: 'Offline',
   uploadNeedServer: '서버 연결 후 전송할 수 있습니다.',
   uploadNeedLogin: 'eolma 로그인 후 전송할 수 있습니다.',
+  uploadNeedEolmaTab: 'eolma 탭에서 로그인한 뒤 전송할 수 있습니다.',
   uploadAuthError: 'eolma 재로그인이 필요합니다. 데이터는 Excel/CSV로 내려받을 수 있습니다.',
   uploadForbidden: '권한이 없어 전송할 수 없습니다.',
   uploadNetworkError: 'eolma 서버에 연결할 수 없습니다.',
@@ -239,7 +241,9 @@ async function renderEolmaStatus() {
     eolmaActionEl.href = EOLMA_HOME;
   } else {
     eolmaPillEl.classList.remove('on', 'off');
-    eolmaPillTextEl.textContent = TEXT.eolmaLoggedOut;
+    eolmaPillTextEl.textContent = result.reason === 'EOLMA_TAB_REQUIRED'
+      ? TEXT.eolmaTabRequired
+      : TEXT.eolmaLoggedOut;
     eolmaActionEl.textContent = TEXT.eolmaLogin;
     eolmaActionEl.href = `${EOLMA_HOME}/login`;
   }
@@ -280,7 +284,9 @@ function updateUploadButton() {
     uploadHintEl.textContent = TEXT.uploadNeedServer;
     uploadHintEl.style.display = 'block';
   } else if (!eolmaLoggedIn) {
-    uploadHintEl.textContent = TEXT.uploadNeedLogin;
+    uploadHintEl.textContent = eolmaPillTextEl.textContent === TEXT.eolmaTabRequired
+      ? TEXT.uploadNeedEolmaTab
+      : TEXT.uploadNeedLogin;
     uploadHintEl.style.display = 'block';
   } else {
     uploadHintEl.style.display = 'none';
@@ -392,7 +398,10 @@ async function startUpload() {
 // 업로드 실패 처리 — 401/403/5xx/네트워크 분기 (데이터는 Excel/CSV 폴백 가능)
 function handleUploadError(e) {
   const status = e?.status;
-  if (status === 401) {
+  if (e?.code === 'EOLMA_TAB_REQUIRED') {
+    showError(TEXT.uploadNeedEolmaTab);
+    refreshEolmaState();
+  } else if (status === 401) {
     showError(TEXT.uploadAuthError);
     refreshEolmaState();
   } else if (status === 403) {

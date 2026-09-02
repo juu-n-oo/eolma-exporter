@@ -1,6 +1,13 @@
 // Background Service Worker: 다중 페이지 fetch 및 데이터 수집
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'EOLMA_SESSION_REQUEST') {
+    forwardToEolmaTab(message)
+      .then(sendResponse)
+      .catch(() => sendResponse({ success: false, status: 0, code: 'NETWORK' }));
+    return true;
+  }
+
   if (message.type === 'FETCH_ALL_PAGES') {
     const platform = message.platform || 'naverpay';
     if (platform === 'coupang') {
@@ -29,6 +36,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+async function forwardToEolmaTab(message) {
+  const tabs = await chrome.tabs.query({ url: ['https://eolma.de/*'] });
+  const tab = tabs.find(candidate => candidate.active) || tabs[0];
+  if (!tab?.id) {
+    return { success: false, status: 401, code: 'EOLMA_TAB_REQUIRED' };
+  }
+
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, {
+      type: 'EOLMA_SESSION_REQUEST',
+      action: message.action,
+      payload: message.payload
+    });
+    return result || { success: false, status: 0, code: 'NETWORK' };
+  } catch {
+    return { success: false, status: 401, code: 'EOLMA_TAB_REQUIRED' };
+  }
+}
 
 function unexpectedCollectionError(error) {
   console.error('결제내역 수집 중 예기치 못한 오류가 발생했습니다.', error);

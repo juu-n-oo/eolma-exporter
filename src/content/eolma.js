@@ -1,28 +1,71 @@
 // eolma.de Content Script
-// eolma SPA 는 JWT 를 페이지 localStorage('access_token') 에 저장한다.
-// content script 는 같은 origin 의 localStorage 에 접근할 수 있으므로,
-// 토큰을 읽어 확장 저장소(chrome.storage.local)에 동기화해 둔다.
-// 팝업은 이 캐시된 토큰으로 who-am-i 를 호출해 로그인 여부를 확인한다.
+//
+// 인증 쿠키는 HttpOnly로 유지한다. 이 스크립트는 쿠키·토큰을 읽거나 저장하지 않고,
+// 사용자가 로그인해 둔 eolma 탭에서만 same-origin API 요청을 대신 보낸다.
 
-function syncEolmaToken() {
-  try {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      chrome.storage.local.set({ eolmaAccessToken: token });
-    } else {
-      chrome.storage.local.remove('eolmaAccessToken');
-    }
-  } catch (e) {
-    // localStorage 접근 불가 시 무시
-  }
+const SESSION_REQUEST = 'EOLMA_SESSION_REQUEST';
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type !== SESSION_REQUEST) return;
+
+  handleSessionRequest(message)
+    .then(sendResponse)
+    .catch(() => sendResponse({ success: false, status: 0, code: 'NETWORK' }));
+  return true;
+});
+
+async function handleSessionRequest(message) {
+  if (message.action === 'CHECK_AUTH') return checkAuth();
+  if (message.action === 'UPLOAD_STAGING') return uploadStaging(message.payload);
+  return { success: false, status: 400, code: 'INVALID_REQUEST' };
 }
 
-// 최초 진입 시 1회 동기화
-syncEolmaToken();
+async function checkAuth() {
+  const response = await fetch('/api/auth/who-am-i', {
+    credentials: 'include',
+    cache: 'no-store'
+  });
 
-// 로그인/로그아웃으로 토큰이 바뀌는 경우를 위해 storage 이벤트도 반영
-window.addEventListener('storage', (e) => {
-  if (e.key === 'access_token' || e.key === null) {
-    syncEolmaToken();
+  if (response.status === 401 || response.status === 403) {
+    return { success: true, loggedIn: false };
   }
-});
+  if (!response.ok) {
+    return { success: false, status: response.status, code: 'HTTP_ERROR' };
+  }
+
+  const body = await response.json().catch(() => ({}));
+  const user = body?.data ?? body;
+  return {
+    success: true,
+    loggedIn: true,
+    user: { name: user?.nickname || user?.email || 'eolma' }
+  };
+}
+
+async function uploadStaging(payload) {
+  if (!Array.isArray(payload) || payload.length === 0) {
+    return { success: false, status: 422, code: 'NO_ITEMS' };
+  }
+
+  const response = await fetch('/api/staging/transactions/bulk', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      status: response.status,
+      code: response.status === 401 ? 'UNAUTHORIZED' : 'HTTP_ERROR'
+    };
+  }
+
+  const body = await response.json().catch(() => ({}));
+  const data = body?.data ?? body;
+  return {
+    success: true,
+    uploadedCount: Array.isArray(data) ? data.length : payload.length
+  };
+}
