@@ -25,6 +25,7 @@ function expectPng(relativePath, width, height) {
 
 expect(manifest.manifest_version === 3, 'Manifest V3가 필요합니다.');
 expect(/^\d+\.\d+\.\d+$/.test(manifest.version), 'manifest version은 MAJOR.MINOR.PATCH 형식이어야 합니다.');
+expect(manifest.name.length <= 75, 'manifest name은 75자 이하여야 합니다.');
 expect(manifest.description.length <= 132, 'manifest description은 132자 이하여야 합니다.');
 expect(JSON.stringify(manifest.permissions) === JSON.stringify(['activeTab', 'downloads']),
   '필요 최소 권한(activeTab, downloads)만 선언해야 합니다.');

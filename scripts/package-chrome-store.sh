@@ -13,7 +13,8 @@ mkdir -p "$ROOT/dist"
 rm -f "$ARTIFACT"
 (cd "$ROOT/src" && zip -qr "$ARTIFACT" . -x '*.DS_Store')
 
-if ! unzip -Z -1 "$ARTIFACT" | grep -qx 'manifest.json'; then
+ZIP_CONTENTS="$(unzip -Z -1 "$ARTIFACT")"
+if ! grep -qx 'manifest.json' <<< "$ZIP_CONTENTS"; then
   echo "manifest.json must be at the ZIP root." >&2
   exit 1
 fi

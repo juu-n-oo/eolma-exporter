@@ -1,6 +1,6 @@
 # Chrome Web Store 배포 가이드
 
-현재 배포 준비 버전은 **0.3.2**이다. 스토어에 입력할 소개 문구·개인정보 보호 관행·권한 정당성은 [등록 정보 문서](./chrome-web-store-listing.ko.md)를 단일 기준으로 사용한다.
+현재 배포 준비 버전은 **0.3.3**이다. 스토어에 입력할 소개 문구·개인정보 보호 관행·권한 정당성은 [등록 정보 문서](./chrome-web-store-listing.ko.md)를 단일 기준으로 사용한다.
 
 ## 패키지 만들기
 
@@ -13,7 +13,7 @@ bash scripts/package-chrome-store.sh
 
 - Manifest V3, 버전, 최소 권한, 아이콘·스크린샷 규격, 토큰/웹 저장소 미사용 여부 확인
 - 자동 테스트 실행
-- `dist/eolma-exporter-v0.3.2.zip` 생성
+- `dist/eolma-exporter-v0.3.3.zip` 생성
 - ZIP 최상위에 `manifest.json`이 있는지 확인하고 SHA-256 출력
 
 `dist/`는 배포 산출물이며 Git에 포함하지 않는다.

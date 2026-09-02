@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "eolma exporter",
-  "version": "0.3.2",
+  "name": "eolma exporter - 쿠팡,네이버페이 거래내역 추출",
+  "version": "0.3.3",
   "description": "네이버페이·쿠팡 주문내역을 Excel·CSV로 내보내거나, 로그인한 eolma 계정으로 전송합니다.",
   "permissions": [
     "activeTab",
